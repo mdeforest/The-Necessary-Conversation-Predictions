@@ -3,10 +3,8 @@ data/audio/
 data/transcripts/
 data/predictions/
 data/fact_checks/
-data/videos.json
 data/speaker_clips/
 data/speaker_embeddings.json
-predictions_master.json
 __pycache__/
 *.pyc
 .DS_Store
@@ -14,3 +12,4 @@ __pycache__/
 # UI
 ui/node_modules/
 ui/dist/
+ui/public/data/
