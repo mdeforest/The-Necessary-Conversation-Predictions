@@ -50,9 +50,9 @@ const TOPICS = [
   'Education',
 ]
 
-const VERDICTS = ['true', 'false', 'pending', 'unverifiable']
-// Weighted: mostly pending for realism (pipeline not done), some true/false
-const VERDICT_WEIGHTS = [0.22, 0.28, 0.35, 0.15]
+const VERDICTS = ['true', 'partially true', 'false', 'pending', 'unverifiable']
+// Weighted: mostly pending for realism (pipeline not done), some true/false/partial
+const VERDICT_WEIGHTS = [0.2, 0.12, 0.23, 0.3, 0.15]
 
 const TIMEFRAMES = [
   'by end of 2024',
@@ -113,6 +113,11 @@ const FAKE_EXPLANATIONS = {
     'This prediction proved accurate. Subsequent reporting and official data confirmed the outcome as described.',
     'Events unfolded largely as predicted. Multiple credible sources corroborate this verdict.',
     'The prediction came true within the stated timeframe, supported by public record.',
+  ],
+  'partially true': [
+    'Parts of this prediction were borne out, but other key details were missing, overstated, or incorrect.',
+    'The evidence supports a mixed verdict: the central trend appeared, but not in the full form claimed.',
+    'Some elements happened as predicted, while other parts were contradicted by later reporting and official data.',
   ],
   false: [
     'This did not come to pass. The evidence available indicates the opposite occurred.',
