@@ -353,16 +353,22 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
     }
   }
 
-  // Save a speaker override — writes to data/prediction_speaker_overrides.json via Vite middleware
-  const handleSpeakerSave = async (predId: string, speaker: string) => {
+  // Save a speaker override — writes to prediction_speaker_overrides.json and
+  // auto-updates speaker_corrections.json if a SPEAKER_XX exists at that timestamp.
+  const handleSpeakerSave = async (pred: MasterRecord, speaker: string) => {
     setEditingPredId(null)
     try {
       await fetch('/api/speaker-overrides', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prediction_id: predId, speaker }),
+        body: JSON.stringify({
+          prediction_id: pred.prediction_id,
+          speaker,
+          video_id: pred.video_id,
+          timestamp_seconds: pred.timestamp_seconds ?? null,
+        }),
       })
-      setOverrides(prev => ({ ...prev, [predId]: speaker }))
+      setOverrides(prev => ({ ...prev, [pred.prediction_id]: speaker }))
       setShowRebuildHint(true)
     } catch {
       // Silently ignore — only available during vite dev
@@ -523,7 +529,7 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
                   isDev={isDev}
                   isEditing={pred.prediction_id === editingPredId}
                   onEditStart={() => setEditingPredId(pred.prediction_id)}
-                  onEditSave={speaker => handleSpeakerSave(pred.prediction_id, speaker)}
+                  onEditSave={speaker => handleSpeakerSave(pred, speaker)}
                   onEditCancel={() => setEditingPredId(null)}
                 />
               ))}
