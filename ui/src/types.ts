@@ -65,7 +65,7 @@ export const SPEAKER_COLORS: Record<string, string> = {
 export const VERDICT_COLORS: Record<Verdict, string> = {
   true: '#22c55e',
   false: '#ef4444',
-  'partially true': '#84cc16',
+  'partially true': '#06b6d4',
   pending: '#f59e0b',
   unverifiable: '#6b7280',
 }
@@ -85,5 +85,5 @@ export function getAccuracyFromCounts(counts: Partial<Record<Verdict, number>>):
   const decided = correct + partial + wrong
 
   if (decided === 0) return null
-  return Math.round(((correct + partial * 0.5) / decided) * 100)
+  return Math.round(((correct + partial) / decided) * 100)
 }

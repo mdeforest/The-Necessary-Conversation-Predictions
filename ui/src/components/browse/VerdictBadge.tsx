@@ -5,7 +5,7 @@ import { VERDICT_LABELS } from '@/types'
 const CLASS: Record<Verdict, string> = {
   true: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/40 dark:text-green-400 dark:border-green-800',
   false: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/40 dark:text-red-400 dark:border-red-800',
-  'partially true': 'bg-lime-50 text-lime-700 border-lime-200 dark:bg-lime-900/40 dark:text-lime-400 dark:border-lime-800',
+  'partially true': 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/40 dark:text-cyan-400 dark:border-cyan-800',
   pending: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-800',
   unverifiable: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700',
 }
