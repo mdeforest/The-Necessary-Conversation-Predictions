@@ -18,17 +18,45 @@ export function StatsBar({ predictions, episodeCount }: StatsBarProps) {
   })
 
   const speakerTotals: Record<string, number> = {}
+  const speakerCorrect: Record<string, number> = {}
+  const speakerWrong: Record<string, number> = {}
   for (const p of predictions) {
     speakerTotals[p.speaker] = (speakerTotals[p.speaker] ?? 0) + 1
+    if (p.verdict === 'true' || p.verdict === 'partially true') {
+      speakerCorrect[p.speaker] = (speakerCorrect[p.speaker] ?? 0) + 1
+    } else if (p.verdict === 'false') {
+      speakerWrong[p.speaker] = (speakerWrong[p.speaker] ?? 0) + 1
+    }
   }
-  const topSpeaker = Object.entries(speakerTotals).sort((a, b) => b[1] - a[1])[0]
+
+  const topSpeaker = Object.keys(speakerTotals)
+    .map(name => {
+      const correct = speakerCorrect[name] ?? 0
+      const wrong = speakerWrong[name] ?? 0
+      const decided = correct + wrong
+      const accuracy = getAccuracyFromCounts({ true: correct, false: wrong })
+
+      return {
+        name,
+        total: speakerTotals[name],
+        decided,
+        accuracy,
+      }
+    })
+    .filter(speaker => speaker.accuracy !== null)
+    .sort((a, b) => {
+      if (b.accuracy !== a.accuracy) return (b.accuracy ?? -1) - (a.accuracy ?? -1)
+      if (b.decided !== a.decided) return b.decided - a.decided
+      if (b.total !== a.total) return b.total - a.total
+      return a.name.localeCompare(b.name)
+    })[0]
 
   const stats = [
     { label: 'Episodes', value: episodeCount.toLocaleString() },
     { label: 'Predictions', value: total.toLocaleString() },
     { label: 'Accuracy', value: accuracy !== null ? `${accuracy}%` : '—' },
     { label: 'Pending', value: total > 0 ? pendingCount.toLocaleString() : '—' },
-    { label: 'Top Predictor', value: topSpeaker ? topSpeaker[0].split(' ')[0] : '—' },
+    { label: 'Top Predictor', value: topSpeaker ? topSpeaker.name.split(' ')[0] : '—' },
   ]
 
   return (
