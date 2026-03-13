@@ -73,7 +73,7 @@ Fact-check results from Gemini 2.0 Flash + Google Search:
   ]
 }
 ```
-`verdict` is one of: `"true"`, `"false"`, `"pending"`, `"unverifiable"`.
+`verdict` is one of: `"true"`, `"partially true"`, `"false"`, `"pending"`, `"unverifiable"`.
 `confidence` is one of: `"high"`, `"medium"`, `"low"`.
 
 ### `../data/predictions_master.json`
@@ -177,4 +177,4 @@ This file is committed to git. It is never overwritten by pipeline stages — on
 - Data loading in `src/data/loader.ts`
 - Aggregation hooks in `src/hooks/usePredictions.ts`
 - Speaker colors: Chad=blue, Haley=purple, Mary Lou=orange, Bob=teal
-- Verdict colors: correct=green, wrong=red, pending=amber, unverifiable=gray
+- Verdict colors: correct=green, partially true=lime, wrong=red, pending=amber, unverifiable=gray
