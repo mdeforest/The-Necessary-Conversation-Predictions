@@ -5,7 +5,7 @@ const CENSOR_PATTERNS = [
   /\bgoddamn(?:ed|ing)?\b/gi,
   /\bfuck(?:ing|ed|er|ers)?\b/gi,
   /\bshit(?:s|ty)?\b/gi,
-  /\basshole(?:s)?\b/gi,
+  /\bass(?:hole)(?:s)?\b/gi,
   /\bbitch(?:es|y)?\b/gi,
   /\bbastard(?:s)?\b/gi,
   /\bdamn(?:ed|ing)?\b/gi,
