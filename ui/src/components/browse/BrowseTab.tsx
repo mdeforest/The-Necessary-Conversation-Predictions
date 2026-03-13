@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import type { MasterRecord } from '@/types'
-import { usePredictions } from '@/hooks/usePredictions'
+import { DEFAULT_FILTERS, type Filters, usePredictions } from '@/hooks/usePredictions'
 import { FilterBar } from './FilterBar'
 import { PredictionCard } from './PredictionCard'
 
@@ -12,18 +12,41 @@ interface BrowseTabProps {
 }
 
 const PAGE_SIZE = 30
+const STORAGE_KEY = 'nc-browse-filters'
+
+function getInitialFilters(initialSpeaker?: string): Filters {
+  if (typeof window === 'undefined') {
+    return initialSpeaker ? { ...DEFAULT_FILTERS, speaker: initialSpeaker } : DEFAULT_FILTERS
+  }
+
+  if (initialSpeaker) return { ...DEFAULT_FILTERS, speaker: initialSpeaker }
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return DEFAULT_FILTERS
+
+    const parsed = JSON.parse(raw) as Partial<Filters>
+    return {
+      ...DEFAULT_FILTERS,
+      ...parsed,
+    }
+  } catch {
+    return DEFAULT_FILTERS
+  }
+}
 
 export function BrowseTab({ predictions, initialSpeaker, onMount, onNavigateToEpisode }: BrowseTabProps) {
-  const { filtered, filters, setFilters, topics, speakers } = usePredictions(predictions)
+  const { filtered, filters, setFilters, topics, speakers } = usePredictions(predictions, getInitialFilters(initialSpeaker))
 
   useEffect(() => {
-    if (initialSpeaker) {
-      setFilters(f => ({ ...f, speaker: initialSpeaker }))
-    }
     onMount?.()
   // Only run on mount — initialSpeaker is consumed once then cleared by App
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filters))
+  }, [filters])
 
   if (predictions.length === 0) {
     return (

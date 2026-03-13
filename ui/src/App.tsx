@@ -13,16 +13,43 @@ import { EpisodesTab } from './components/episodes/EpisodesTab'
 import { useTheme } from './hooks/useTheme'
 import { ThemeContext } from './context/ThemeContext'
 
+const STORAGE_KEY = 'nc-app-view'
+
+function isTab(value: string): value is Tab {
+  return ['overview', 'speakers', 'topics', 'browse', 'episodes'].includes(value)
+}
+
+function getInitialAppView(): { tab: Tab; selectedEpisodeId: string | null } {
+  if (typeof window === 'undefined') return { tab: 'overview', selectedEpisodeId: null }
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return { tab: 'overview', selectedEpisodeId: null }
+
+    const parsed = JSON.parse(raw) as { tab?: string; selectedEpisodeId?: string | null }
+    return {
+      tab: parsed.tab && isTab(parsed.tab) ? parsed.tab : 'overview',
+      selectedEpisodeId: typeof parsed.selectedEpisodeId === 'string' ? parsed.selectedEpisodeId : null,
+    }
+  } catch {
+    return { tab: 'overview', selectedEpisodeId: null }
+  }
+}
+
 export default function App() {
   const [data, setData] = useState<AppData | null>(null)
-  const [tab, setTab] = useState<Tab>('overview')
+  const [tab, setTab] = useState<Tab>(() => getInitialAppView().tab)
   const [browseSpeaker, setBrowseSpeaker] = useState<string>('')
-  const [selectedEpisodeId, setSelectedEpisodeId] = useState<string | null>(null)
+  const [selectedEpisodeId, setSelectedEpisodeId] = useState<string | null>(() => getInitialAppView().selectedEpisodeId)
   const { theme, toggle, isDark } = useTheme()
 
   useEffect(() => {
     loadData().then(setData).catch(console.error)
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tab, selectedEpisodeId }))
+  }, [selectedEpisodeId, tab])
 
   if (!data) {
     return (
