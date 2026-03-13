@@ -148,28 +148,47 @@ let videos = []
 
 if (!FORCE_FAKE && existsSync(videosSrc)) {
   videos = JSON.parse(await readFile(videosSrc, 'utf-8'))
-  const predIds = new Set(
-    (await readdir(path.join(DATA_SRC, 'predictions')).catch(() => []))
-      .filter(f => f.endsWith('.json'))
-      .map(f => f.replace('.json', ''))
-  )
-  const fcIds = new Set(
-    (await readdir(path.join(DATA_SRC, 'fact_checks')).catch(() => []))
-      .filter(f => f.endsWith('.json'))
-      .map(f => f.replace('.json', ''))
-  )
-  // Build set of diarized video IDs by reading transcript files
-  const transcriptDir = path.join(DATA_SRC, 'transcripts')
-  const diarizedIds = new Set()
-  const transcriptFiles = await readdir(transcriptDir).catch(() => [])
-  for (const f of transcriptFiles.filter(f => f.endsWith('.json'))) {
+
+  // Determine which video IDs have complete data. Prefer using predictions_master.json
+  // as the source of truth (it's committed to git), with a fallback to checking local
+  // subdirectory files (useful during local pipeline development).
+  let completeIds = new Set()
+
+  const masterForFilter = path.resolve(__dirname, '../../predictions_master.json')
+  if (existsSync(masterForFilter)) {
     try {
-      const t = JSON.parse(await readFile(path.join(transcriptDir, f), 'utf-8'))
-      if (t.diarized === true) diarizedIds.add(t.video_id ?? f.replace('.json', ''))
-    } catch { /* skip unreadable files */ }
+      const raw = JSON.parse(await readFile(masterForFilter, 'utf-8'))
+      if (Array.isArray(raw) && raw.length > 0) {
+        for (const r of raw) if (r.video_id) completeIds.add(r.video_id)
+      }
+    } catch { /* ignore parse errors */ }
   }
 
-  const doneVideos = videos.filter(v => predIds.has(v.id) && fcIds.has(v.id) && diarizedIds.has(v.id))
+  // If master didn't give us any IDs, fall back to checking subdirectory files
+  if (completeIds.size === 0) {
+    const predIds = new Set(
+      (await readdir(path.join(DATA_SRC, 'predictions')).catch(() => []))
+        .filter(f => f.endsWith('.json'))
+        .map(f => f.replace('.json', ''))
+    )
+    const fcIds = new Set(
+      (await readdir(path.join(DATA_SRC, 'fact_checks')).catch(() => []))
+        .filter(f => f.endsWith('.json'))
+        .map(f => f.replace('.json', ''))
+    )
+    const transcriptDir = path.join(DATA_SRC, 'transcripts')
+    const diarizedIds = new Set()
+    const transcriptFiles = await readdir(transcriptDir).catch(() => [])
+    for (const f of transcriptFiles.filter(f => f.endsWith('.json'))) {
+      try {
+        const t = JSON.parse(await readFile(path.join(transcriptDir, f), 'utf-8'))
+        if (t.diarized === true) diarizedIds.add(t.video_id ?? f.replace('.json', ''))
+      } catch { /* skip unreadable files */ }
+    }
+    for (const id of predIds) if (fcIds.has(id) && diarizedIds.has(id)) completeIds.add(id)
+  }
+
+  const doneVideos = completeIds.size > 0 ? videos.filter(v => completeIds.has(v.id)) : []
   await writeFile(path.join(DATA_DEST, 'videos.json'), JSON.stringify(doneVideos, null, 2))
   console.log(`  videos.json: ${doneVideos.length} complete episodes (${videos.length - doneVideos.length} in-progress omitted)`)
   videos = doneVideos
