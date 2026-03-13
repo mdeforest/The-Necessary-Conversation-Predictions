@@ -19,8 +19,8 @@ export const DEFAULT_FILTERS: Filters = {
   search: '',
 }
 
-export function usePredictions(all: MasterRecord[]) {
-  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
+export function usePredictions(all: MasterRecord[], initialFilters: Filters = DEFAULT_FILTERS) {
+  const [filters, setFilters] = useState<Filters>(initialFilters)
 
   const filtered = useMemo(() => {
     return all.filter(p => {

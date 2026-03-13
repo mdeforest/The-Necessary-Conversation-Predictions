@@ -35,6 +35,19 @@ function extractVideoId(url: string): string | null {
   }
 }
 
+function getPredictionIdForTime(preds: MasterRecord[], time: number | null, lookAheadSeconds = 0): string | null {
+  if (time == null) return null
+
+  const effectiveTime = time + lookAheadSeconds
+  const withTime = preds.filter(p => p.timestamp_seconds != null)
+  for (let i = withTime.length - 1; i >= 0; i--) {
+    const ts = withTime[i].timestamp_seconds!
+    if (ts <= effectiveTime && effectiveTime < ts + 60) return withTime[i].prediction_id
+  }
+
+  return null
+}
+
 // ─── YouTube IFrame API loader (singleton) ────────────────────────────────────
 
 let ytApiPromise: Promise<void> | null = null
@@ -230,6 +243,7 @@ function EpisodeDetail({ video, preds, onBack, onPrevious, onNext }: EpisodeDeta
   const prevActivePredIdRef = useRef<string | null>(null)
   const prevCurrentTimeRef = useRef<number | null>(null)
   const [listSpacerHeight, setListSpacerHeight] = useState(0)
+  const [scrollOverridePredId, setScrollOverridePredId] = useState<string | null>(null)
 
   // Dev-only: speaker overrides (prediction_id → speaker name)
   const isDev = import.meta.env.DEV
@@ -321,14 +335,25 @@ function EpisodeDetail({ video, preds, onBack, onPrevious, onNext }: EpisodeDeta
 
   // Active prediction: most recent whose timestamp ≤ currentTime and within 60s
   const activePredId = useMemo(() => {
-    if (currentTime == null) return null
-    const withTime = sortedPreds.filter(p => p.timestamp_seconds != null)
-    for (let i = withTime.length - 1; i >= 0; i--) {
-      const ts = withTime[i].timestamp_seconds!
-      if (ts <= currentTime && currentTime < ts + 60) return withTime[i].prediction_id
-    }
-    return null
+    return getPredictionIdForTime(sortedPreds, currentTime)
   }, [currentTime, sortedPreds])
+
+  const scrollOverridePred = useMemo(
+    () => sortedPreds.find(pred => pred.prediction_id === scrollOverridePredId) ?? null,
+    [scrollOverridePredId, sortedPreds],
+  )
+
+  const scrollPredId = useMemo(() => {
+    if (scrollOverridePredId) return scrollOverridePredId
+    return getPredictionIdForTime(sortedPreds, currentTime, SEEK_SCROLL_THRESHOLD_SECONDS)
+  }, [currentTime, scrollOverridePredId, sortedPreds])
+
+  useEffect(() => {
+    if (!scrollOverridePred || scrollOverridePred.timestamp_seconds == null || currentTime == null) return
+    if (currentTime >= scrollOverridePred.timestamp_seconds - SEEK_SCROLL_THRESHOLD_SECONDS) {
+      setScrollOverridePredId(null)
+    }
+  }, [currentTime, scrollOverridePred])
 
   // Fire a ring-flash animation when the active prediction changes
   useEffect(() => {
@@ -350,11 +375,11 @@ function EpisodeDetail({ video, preds, onBack, onPrevious, onNext }: EpisodeDeta
     const prevTime = prevCurrentTimeRef.current
     prevCurrentTimeRef.current = currentTime
 
-    if (prevTime == null || !activePredId) return
+    if (prevTime == null || !scrollPredId) return
     if (Math.abs(currentTime - prevTime) < SEEK_SCROLL_THRESHOLD_SECONDS) return
 
-    scrollToPred(activePredId)
-  }, [activePredId, currentTime])
+    scrollToPred(scrollPredId)
+  }, [currentTime, scrollPredId])
 
   useLayoutEffect(() => {
     const container = listRef.current
@@ -415,10 +440,11 @@ function EpisodeDetail({ video, preds, onBack, onPrevious, onNext }: EpisodeDeta
   }
 
   useEffect(() => {
-    if (activePredId) scrollToPred(activePredId)
-  }, [activePredId])
+    if (scrollPredId) scrollToPred(scrollPredId)
+  }, [scrollPredId])
 
   const openAt = (startSeconds?: number) => {
+    if (startSeconds == null) setScrollOverridePredId(null)
     pendingStartRef.current = getPlaybackStartSeconds(startSeconds) ?? undefined
     setShowPlayer(true)
     if (startSeconds != null) setCurrentTime(startSeconds)
@@ -427,6 +453,7 @@ function EpisodeDetail({ video, preds, onBack, onPrevious, onNext }: EpisodeDeta
   const handleSeek = (pred: MasterRecord) => {
     if (pred.timestamp_seconds == null) return
     const t = getPlaybackStartSeconds(pred.timestamp_seconds) ?? 0
+    setScrollOverridePredId(pred.prediction_id)
     scrollToPred(pred.prediction_id)
     if (playerRef.current) {
       playerRef.current.seekTo(t, true)
@@ -658,7 +685,7 @@ export function EpisodesTab({ videos, predictions, selectedId, onSelectId }: Epi
   }
 
   const sorted = [...videos].sort(
-    (a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime(),
+    (a, b) => new Date(a.published_at).getTime() - new Date(b.published_at).getTime(),
   )
 
   if (selectedId) {

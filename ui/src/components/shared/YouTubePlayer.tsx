@@ -7,7 +7,7 @@ interface YouTubePlayerProps {
   startSeconds?: number | null
 }
 
-export const TIMESTAMP_LEAD_IN_SECONDS = 5
+export const TIMESTAMP_LEAD_IN_SECONDS = 2
 
 export function getPlaybackStartSeconds(startSeconds?: number | null): number | null {
   if (startSeconds == null) return null
