@@ -8,7 +8,6 @@ Usage:
 
 import argparse
 import json
-import re
 import string
 from datetime import datetime
 from pathlib import Path
@@ -41,40 +40,116 @@ def tokenize(text: str) -> set[str]:
     return {w for w in text.split() if w not in STOPWORDS and len(w) > 2}
 
 
-def score_segment_window(
-    segments: list[dict], start_idx: int, window: int, pred_tokens: set[str]
-) -> float:
-    """Score a sliding window of segments against prediction tokens."""
-    if not pred_tokens:
-        return 0.0
-    window_text = " ".join(
-        s.get("text", "") for s in segments[start_idx : start_idx + window]
+def normalize_text(text: str) -> str:
+    return " ".join(
+        text.lower().translate(str.maketrans("", "", string.punctuation)).split()
     )
+
+
+def overlap_score(query_tokens: set[str], target_tokens: set[str]) -> float:
+    if not query_tokens:
+        return 0.0
+    return len(query_tokens & target_tokens) / len(query_tokens)
+
+
+def score_segment_window(
+    prediction: dict, segments: list[dict], start_idx: int, window: int
+) -> float:
+    """Score a sliding window of segments against prediction text and context."""
+    prediction_text = prediction.get("prediction", "")
+    context_text = prediction.get("context", "")
+    prediction_tokens = tokenize(prediction_text)
+    context_tokens = tokenize(context_text)
+
+    if not prediction_tokens and not context_tokens:
+        return 0.0
+
+    window_segments = segments[start_idx : start_idx + window]
+    window_text = " ".join(s.get("text", "") for s in window_segments)
     seg_tokens = tokenize(window_text)
-    overlap = pred_tokens & seg_tokens
-    return len(overlap) / len(pred_tokens)
+    prediction_overlap = overlap_score(prediction_tokens, seg_tokens)
+    context_overlap = overlap_score(context_tokens, seg_tokens)
+
+    # Prefer windows spoken by the predicted speaker when diarization exists.
+    speaker = prediction.get("speaker")
+    speaker_bonus = 0.0
+    if speaker and any(s.get("speaker") == speaker for s in window_segments):
+        speaker_bonus = 0.05
+
+    normalized_prediction = normalize_text(prediction_text)
+    normalized_window = normalize_text(window_text)
+    phrase_bonus = 0.0
+    if normalized_prediction and (
+        normalized_prediction in normalized_window
+        or normalized_window in normalized_prediction
+    ):
+        phrase_bonus = 0.15
+
+    # Weight the prediction text more heavily than the descriptive context.
+    return (
+        (prediction_overlap * 0.75)
+        + (context_overlap * 0.2)
+        + speaker_bonus
+        + phrase_bonus
+    )
+
+
+def best_segment_start_in_window(
+    prediction: dict, window_segments: list[dict]
+) -> float | None:
+    """Within the best-matching window, anchor to the segment where the prediction begins."""
+    prediction_text = prediction.get("prediction", "")
+    prediction_tokens = tokenize(prediction_text)
+    normalized_prediction = normalize_text(prediction_text)
+    speaker = prediction.get("speaker")
+
+    best_score = -1.0
+    best_start = None
+
+    for segment in window_segments:
+        segment_text = segment.get("text", "")
+        segment_tokens = tokenize(segment_text)
+        normalized_segment = normalize_text(segment_text)
+
+        score = overlap_score(prediction_tokens, segment_tokens)
+        if speaker and segment.get("speaker") == speaker:
+            score += 0.05
+        if normalized_segment and (
+            normalized_segment in normalized_prediction
+            or normalized_prediction in normalized_segment
+        ):
+            score += 0.25
+
+        if score > best_score:
+            best_score = score
+            best_start = segment.get("start")
+
+    return best_start
 
 
 def find_best_timestamp(
     prediction: dict, segments: list[dict], min_score: float, window: int = 5
 ) -> float | None:
     """Return the start time of the best-matching segment window, or None if below threshold."""
-    pred_text = prediction.get("prediction", "") + " " + prediction.get("context", "")
-    pred_tokens = tokenize(pred_text)
-    if not pred_tokens or not segments:
+    prediction_text = prediction.get("prediction", "")
+    context_text = prediction.get("context", "")
+    if (not tokenize(prediction_text) and not tokenize(context_text)) or not segments:
         return None
 
     best_score = 0.0
-    best_start = None
+    best_idx = None
 
     for i in range(len(segments)):
-        score = score_segment_window(segments, i, window, pred_tokens)
+        score = score_segment_window(prediction, segments, i, window)
         if score > best_score:
             best_score = score
-            best_start = segments[i].get("start")
+            best_idx = i
 
-    if best_score >= min_score:
-        return best_start
+    if best_score >= min_score and best_idx is not None:
+        return best_segment_start_in_window(
+            prediction,
+            segments[best_idx : best_idx + window],
+        )
     return None
 
 
