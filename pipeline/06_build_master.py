@@ -56,6 +56,7 @@ def main():
                 "prediction": pred.get("prediction", ""),
                 "context": pred.get("context", ""),
                 "topic": pred.get("topic", "other"),
+                "date_generated": fc.get("date_generated"),
                 "verdict": fc.get("verdict"),
                 "confidence": fc.get("confidence"),
                 "explanation": fc.get("explanation"),

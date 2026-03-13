@@ -21,7 +21,7 @@
     "SPEAKER_07": "Bob Kultgen"
   },
   "JKju6ziapg4": {
-    "SPEAKER_00": "",
+    "SPEAKER_00": "Bob Kultgen",
     "SPEAKER_01": "Chad Kultgen",
     "SPEAKER_03": "Bob Kultgen",
     "SPEAKER_04": "Mary Lou Kultgen"
@@ -36,13 +36,13 @@
   },
   "N6YYbz1Q0ro": {
     "SPEAKER_00": "",
-    "SPEAKER_01": "",
+    "SPEAKER_01": "Haley Popp",
     "SPEAKER_03": "",
-    "SPEAKER_04": "",
+    "SPEAKER_04": "Bob Kultgen",
     "SPEAKER_05": "",
     "SPEAKER_06": "",
     "SPEAKER_07": "",
-    "SPEAKER_08": ""
+    "SPEAKER_08": "Chad Kultgen"
   },
   "NNJaAPTlY4s": {
     "SPEAKER_00": "",
@@ -53,50 +53,66 @@
   },
   "OobMP5_8aCw": {
     "SPEAKER_00": "",
-    "SPEAKER_01": "",
-    "SPEAKER_02": "",
-    "SPEAKER_03": "",
-    "SPEAKER_04": "",
-    "SPEAKER_05": ""
+    "SPEAKER_01": "Chad Kultgen",
+    "SPEAKER_02": "Chad Kultgen",
+    "SPEAKER_03": "Chad Kultgen",
+    "SPEAKER_04": "Chad Kultgen",
+    "SPEAKER_05": "Chad Kultgen"
   },
   "PfQGvDtfE30": {
     "SPEAKER_00": "",
-    "SPEAKER_01": "",
-    "SPEAKER_02": "",
+    "SPEAKER_01": "Chad Kultgen",
+    "SPEAKER_02": "Chad Kultgen",
     "SPEAKER_03": "Mary Lou Kultgen",
-    "SPEAKER_04": "",
+    "SPEAKER_04": "Chad Kultgen",
     "SPEAKER_06": ""
   },
   "StfBHAhM0PY": {
     "SPEAKER_00": "",
-    "SPEAKER_01": "",
-    "SPEAKER_02": "",
-    "SPEAKER_04": "",
-    "SPEAKER_05": ""
+    "SPEAKER_01": "Chad Kultgen",
+    "SPEAKER_02": "Chad Kultgen",
+    "SPEAKER_04": "Haley Popp",
+    "SPEAKER_05": "Haley Popp"
   },
   "Sv0xzilykdc": {
     "SPEAKER_00": "",
-    "SPEAKER_01": "",
-    "SPEAKER_03": "",
-    "SPEAKER_04": "",
+    "SPEAKER_01": "Chad Kultgen",
+    "SPEAKER_03": "Bob Kultgen",
+    "SPEAKER_04": "Haley Popp",
     "SPEAKER_06": "",
-    "SPEAKER_07": "",
-    "SPEAKER_08": ""
+    "SPEAKER_07": "Chad Kultgen",
+    "SPEAKER_08": "Bob Kultgen"
   },
   "T-7xIyE4S1Q": {
     "SPEAKER_00": "",
-    "SPEAKER_01": "",
-    "SPEAKER_02": "",
-    "SPEAKER_03": "",
-    "SPEAKER_04": "",
-    "SPEAKER_06": ""
+    "SPEAKER_01": "Chad Kultgen",
+    "SPEAKER_02": "Chad Kultgen",
+    "SPEAKER_03": "Chad Kultgen",
+    "SPEAKER_04": "Mary Lou Kultgen",
+    "SPEAKER_06": "Bob Kultgen"
   },
   "TIxocOlwh5s": {
-    "SPEAKER_00": "",
+    "SPEAKER_00": "Bob Kultgen",
     "SPEAKER_01": "",
-    "SPEAKER_02": "",
-    "SPEAKER_03": "",
+    "SPEAKER_02": "Chad Kultgen",
+    "SPEAKER_03": "Chad Kultgen",
     "SPEAKER_04": "",
-    "SPEAKER_06": ""
+    "SPEAKER_06": "Bob Kultgen"
+  },
+  "VE0_mJ5LASI": {
+    "SPEAKER_00": "Chad Kultgen",
+    "SPEAKER_01": "Chad Kultgen",
+    "SPEAKER_02": "Chad Kultgen",
+    "SPEAKER_03": "",
+    "SPEAKER_04": "Chad Kultgen",
+    "SPEAKER_06": "Haley Popp"
+  },
+  "ZIo5_U7QZMI": {
+    "SPEAKER_00": "Mary Lou Kultgen",
+    "SPEAKER_01": "Chad Kultgen",
+    "SPEAKER_02": "",
+    "SPEAKER_03": "Chad Kultgen",
+    "SPEAKER_04": "Bob Kultgen",
+    "SPEAKER_05": "Chad Kultgen"
   }
 }

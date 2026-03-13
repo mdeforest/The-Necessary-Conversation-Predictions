@@ -74,7 +74,7 @@ SOURCE QUALITY:
 A "high" confidence verdict requires at least two high-reliability sources agreeing.
 
 After researching, return a JSON object with:
-- "verdict": one of "true", "false", "pending", "unverifiable"
+- "verdict": one of "true", "partially true", "false", "pending", "unverifiable"
 - "confidence": one of "high", "medium", "low"
 - "explanation": 3-5 sentences — state the evidence found, what it shows, and why you chose this verdict. If the prediction had multiple parts, address each.
 - "sources": list of URLs that directly support your verdict (include at least 1 if available)
@@ -87,7 +87,7 @@ SYSTEM_PROMPT = _build_system_prompt()
 
 JSON_FORMAT_REMINDER = (
     "\n\nYou MUST respond with ONLY a JSON object in exactly this format, no other text:\n"
-    '{"verdict": "true|false|pending|unverifiable", "confidence": "high|medium|low", '
+    '{"verdict": "true|partially true|false|pending|unverifiable", "confidence": "high|medium|low", '
     '"explanation": "3-5 sentences", "sources": ["url1", "url2"]}'
 )
 
@@ -198,12 +198,14 @@ def fact_check_prediction(prediction: dict, video: dict) -> dict:
     if result is None:
         return {
             "prediction_id": prediction["id"],
+            "date_generated": date.today().isoformat(),
             "verdict": "unverifiable",
             "confidence": "low",
             "explanation": "The model declined to process this prediction after two attempts (content filter). Unable to fact-check automatically.",
             "sources": [],
         }
     result["prediction_id"] = prediction["id"]
+    result["date_generated"] = date.today().isoformat()
 
     # Extract source URLs from grounding metadata if available
     if not result.get("sources") and response is not None:
