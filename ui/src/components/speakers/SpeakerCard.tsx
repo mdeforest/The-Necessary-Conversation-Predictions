@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import type { MasterRecord, Verdict } from '@/types'
-import { SPEAKER_COLORS, VERDICT_COLORS, VERDICT_LABELS } from '@/types'
+import { SPEAKER_COLORS, VERDICT_COLORS, VERDICT_LABELS, VERDICTS, getAccuracyFromCounts } from '@/types'
 import { useThemeContext, useTooltipStyle } from '@/context/ThemeContext'
 
 interface SpeakerCardProps {
@@ -16,8 +16,6 @@ interface SpeakerCardProps {
   predictions: MasterRecord[]
   onBrowse?: () => void
 }
-
-const VERDICTS: Verdict[] = ['true', 'false', 'pending', 'unverifiable']
 
 export function SpeakerCard({ name, predictions, onBrowse }: SpeakerCardProps) {
   const { isDark } = useThemeContext()
@@ -30,8 +28,7 @@ export function SpeakerCard({ name, predictions, onBrowse }: SpeakerCardProps) {
     acc[v] = mine.filter(p => p.verdict === v).length
     return acc
   }, {})
-  const decided = counts['true'] + counts['false']
-  const accuracy = decided > 0 ? Math.round((counts['true'] / decided) * 100) : null
+  const accuracy = getAccuracyFromCounts(counts)
 
   const chartData = VERDICTS.filter(v => counts[v] > 0).map(v => ({
     name: VERDICT_LABELS[v],

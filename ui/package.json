@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node scripts/sync-data.mjs && vite",
+    "dev": "python3 ../pipeline/06_build_master.py && node scripts/sync-data.mjs && vite",
     "dev:fake": "node scripts/sync-data.mjs --fake && vite",
     "build": "node scripts/sync-data.mjs && tsc -b && vite build",
     "preview": "vite preview",

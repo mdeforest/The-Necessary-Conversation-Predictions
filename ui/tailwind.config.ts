@@ -9,6 +9,7 @@ export default {
         // Verdict colors
         verdict: {
           true: '#22c55e',
+          'partially true': '#84cc16',
           false: '#ef4444',
           pending: '#f59e0b',
           unverifiable: '#6b7280',

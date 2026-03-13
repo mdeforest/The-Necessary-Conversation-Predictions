@@ -1,6 +1,6 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import type { MasterRecord, Verdict } from '@/types'
-import { VERDICT_COLORS, VERDICT_LABELS } from '@/types'
+import { VERDICT_COLORS, VERDICT_LABELS, VERDICTS } from '@/types'
 import { useThemeContext, useTooltipStyle } from '@/context/ThemeContext'
 
 interface VerdictChartProps {
@@ -11,7 +11,7 @@ export function VerdictChart({ predictions }: VerdictChartProps) {
   const { isDark } = useThemeContext()
   const tooltip = useTooltipStyle(isDark)
 
-  const counts: Record<Verdict, number> = { true: 0, false: 0, pending: 0, unverifiable: 0 }
+  const counts = Object.fromEntries(VERDICTS.map(verdict => [verdict, 0])) as Record<Verdict, number>
   for (const p of predictions) counts[p.verdict]++
 
   const data = (Object.entries(counts) as [Verdict, number][])

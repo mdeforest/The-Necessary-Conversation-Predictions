@@ -13,6 +13,14 @@ import { VERDICT_COLORS } from '@/types'
 import { timelineData } from '@/hooks/usePredictions'
 import { useThemeContext, useTooltipStyle } from '@/context/ThemeContext'
 
+const TIMELINE_VERDICTS = ['true', 'partially true', 'false', 'pending'] as const
+const TIMELINE_GRADIENT_IDS = {
+  true: 'grad-true',
+  'partially true': 'grad-partially-true',
+  false: 'grad-false',
+  pending: 'grad-pending',
+} as const
+
 interface TimelineChartProps {
   predictions: MasterRecord[]
 }
@@ -40,8 +48,8 @@ export function TimelineChart({ predictions }: TimelineChartProps) {
       <ResponsiveContainer width="100%" height={240}>
         <AreaChart data={data} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
           <defs>
-            {(['true', 'false', 'pending'] as const).map(v => (
-              <linearGradient key={v} id={`grad-${v}`} x1="0" y1="0" x2="0" y2="1">
+            {TIMELINE_VERDICTS.map(v => (
+              <linearGradient key={v} id={TIMELINE_GRADIENT_IDS[v]} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={VERDICT_COLORS[v]} stopOpacity={0.3} />
                 <stop offset="95%" stopColor={VERDICT_COLORS[v]} stopOpacity={0} />
               </linearGradient>
@@ -61,9 +69,10 @@ export function TimelineChart({ predictions }: TimelineChartProps) {
               <span style={{ color: isDark ? '#93C5FD' : '#374151', fontSize: 13 }} className="capitalize">{value}</span>
             )}
           />
-          <Area type="monotone" dataKey="true" name="Correct" stackId="1" stroke={VERDICT_COLORS.true} fill="url(#grad-true)" />
-          <Area type="monotone" dataKey="false" name="Wrong" stackId="1" stroke={VERDICT_COLORS.false} fill="url(#grad-false)" />
-          <Area type="monotone" dataKey="pending" name="Pending" stackId="1" stroke={VERDICT_COLORS.pending} fill="url(#grad-pending)" />
+          <Area type="monotone" dataKey="true" name="Correct" stackId="1" stroke={VERDICT_COLORS.true} fill={`url(#${TIMELINE_GRADIENT_IDS.true})`} />
+          <Area type="monotone" dataKey="partially true" name="Partially True" stackId="1" stroke={VERDICT_COLORS['partially true']} fill={`url(#${TIMELINE_GRADIENT_IDS['partially true']})`} />
+          <Area type="monotone" dataKey="false" name="Wrong" stackId="1" stroke={VERDICT_COLORS.false} fill={`url(#${TIMELINE_GRADIENT_IDS.false})`} />
+          <Area type="monotone" dataKey="pending" name="Pending" stackId="1" stroke={VERDICT_COLORS.pending} fill={`url(#${TIMELINE_GRADIENT_IDS.pending})`} />
         </AreaChart>
       </ResponsiveContainer>
     </div>

@@ -9,7 +9,7 @@ import {
   Legend,
 } from 'recharts'
 import type { MasterRecord } from '@/types'
-import { VERDICT_COLORS } from '@/types'
+import { VERDICT_COLORS, getAccuracyFromCounts } from '@/types'
 import { topicData } from '@/hooks/usePredictions'
 import { useThemeContext, useTooltipStyle } from '@/context/ThemeContext'
 
@@ -64,6 +64,7 @@ export function TopicsTab({ predictions, onSelectTopic }: TopicsTabProps) {
               )}
             />
             <Bar dataKey="true" name="Correct" stackId="a" fill={VERDICT_COLORS.true} />
+            <Bar dataKey="partially true" name="Partially True" stackId="a" fill={VERDICT_COLORS['partially true']} />
             <Bar dataKey="false" name="Wrong" stackId="a" fill={VERDICT_COLORS.false} />
             <Bar dataKey="pending" name="Pending" stackId="a" fill={VERDICT_COLORS.pending} />
             <Bar dataKey="unverifiable" name="Unverifiable" stackId="a" fill={VERDICT_COLORS.unverifiable} radius={[0, 4, 4, 0]} />
@@ -73,8 +74,7 @@ export function TopicsTab({ predictions, onSelectTopic }: TopicsTabProps) {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {data.map(t => {
-          const decided = t['true'] + t['false']
-          const accuracy = decided > 0 ? Math.round((t['true'] / decided) * 100) : null
+          const accuracy = getAccuracyFromCounts(t)
           return (
             <button
               key={t.topic}

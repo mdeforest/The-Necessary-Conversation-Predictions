@@ -1,4 +1,5 @@
 import type { MasterRecord } from '@/types'
+import { getAccuracyFromCounts } from '@/types'
 
 interface StatsBarProps {
   predictions: MasterRecord[]
@@ -8,8 +9,13 @@ interface StatsBarProps {
 export function StatsBar({ predictions, episodeCount }: StatsBarProps) {
   const total = predictions.length
   const trueCount = predictions.filter(p => p.verdict === 'true').length
+  const partiallyTrueCount = predictions.filter(p => p.verdict === 'partially true').length
   const pendingCount = predictions.filter(p => p.verdict === 'pending').length
-  const accuracy = total > 0 ? Math.round((trueCount / total) * 100) : 0
+  const accuracy = getAccuracyFromCounts({
+    true: trueCount,
+    'partially true': partiallyTrueCount,
+    false: predictions.filter(p => p.verdict === 'false').length,
+  })
 
   const speakerTotals: Record<string, number> = {}
   for (const p of predictions) {
@@ -20,7 +26,7 @@ export function StatsBar({ predictions, episodeCount }: StatsBarProps) {
   const stats = [
     { label: 'Episodes', value: episodeCount.toLocaleString() },
     { label: 'Predictions', value: total.toLocaleString() },
-    { label: 'Accuracy', value: total > 0 ? `${accuracy}%` : '—' },
+    { label: 'Accuracy', value: accuracy !== null ? `${accuracy}%` : '—' },
     { label: 'Pending', value: total > 0 ? pendingCount.toLocaleString() : '—' },
     { label: 'Top Predictor', value: topSpeaker ? topSpeaker[0].split(' ')[0] : '—' },
   ]

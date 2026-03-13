@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import type { MasterRecord } from '@/types'
-import { KNOWN_SPEAKERS, SPEAKER_COLORS, VERDICT_COLORS } from '@/types'
+import { KNOWN_SPEAKERS, SPEAKER_COLORS, VERDICT_COLORS, getAccuracyFromCounts } from '@/types'
 
 interface LeaderboardProps {
   predictions: MasterRecord[]
@@ -11,6 +11,7 @@ interface SpeakerRow {
   name: string
   total: number
   correct: number
+  partiallyTrue: number
   wrong: number
   pending: number
   unverifiable: number
@@ -21,13 +22,13 @@ export function Leaderboard({ predictions, onSelectSpeaker }: LeaderboardProps) 
   const rows: SpeakerRow[] = KNOWN_SPEAKERS.map(name => {
     const mine = predictions.filter(p => p.speaker === name)
     const correct = mine.filter(p => p.verdict === 'true').length
+    const partiallyTrue = mine.filter(p => p.verdict === 'partially true').length
     const wrong = mine.filter(p => p.verdict === 'false').length
     const pending = mine.filter(p => p.verdict === 'pending').length
     const unverifiable = mine.filter(p => p.verdict === 'unverifiable').length
     const total = mine.length
-    const decided = correct + wrong
-    const accuracy = decided > 0 ? Math.round((correct / decided) * 100) : null
-    return { name, total, correct, wrong, pending, unverifiable, accuracy }
+    const accuracy = getAccuracyFromCounts({ true: correct, 'partially true': partiallyTrue, false: wrong })
+    return { name, total, correct, partiallyTrue, wrong, pending, unverifiable, accuracy }
   })
     .filter(r => r.total > 0)
     .sort((a, b) => (b.accuracy ?? -1) - (a.accuracy ?? -1))
@@ -82,6 +83,7 @@ export function Leaderboard({ predictions, onSelectSpeaker }: LeaderboardProps) 
             </div>
             <div className="flex mt-1.5 ml-7 h-1.5 rounded-full overflow-hidden gap-px">
               <div style={{ flex: row.correct, backgroundColor: VERDICT_COLORS.true }} className="rounded-l-full" />
+              <div style={{ flex: row.partiallyTrue, backgroundColor: VERDICT_COLORS['partially true'] }} />
               <div style={{ flex: row.wrong, backgroundColor: VERDICT_COLORS.false }} />
               <div style={{ flex: row.pending, backgroundColor: VERDICT_COLORS.pending }} />
               <div style={{ flex: row.unverifiable, backgroundColor: VERDICT_COLORS.unverifiable }} className="rounded-r-full" />

@@ -53,7 +53,7 @@ export function usePredictions(all: MasterRecord[]) {
 export function speakerStats(predictions: MasterRecord[]) {
   const map: Record<string, Record<string, number>> = {}
   for (const p of predictions) {
-    if (!map[p.speaker]) map[p.speaker] = { true: 0, false: 0, pending: 0, unverifiable: 0, total: 0 }
+    if (!map[p.speaker]) map[p.speaker] = { true: 0, 'partially true': 0, false: 0, pending: 0, unverifiable: 0, total: 0 }
     map[p.speaker][p.verdict]++
     map[p.speaker].total++
   }
@@ -62,10 +62,10 @@ export function speakerStats(predictions: MasterRecord[]) {
 
 /** Predictions per episode date (for timeline) */
 export function timelineData(predictions: MasterRecord[]) {
-  const map: Record<string, { date: string; total: number; true: number; false: number; pending: number; unverifiable: number }> = {}
+  const map: Record<string, { date: string; total: number; true: number; 'partially true': number; false: number; pending: number; unverifiable: number }> = {}
   for (const p of predictions) {
     const d = p.episode_date
-    if (!map[d]) map[d] = { date: d, total: 0, true: 0, false: 0, pending: 0, unverifiable: 0 }
+    if (!map[d]) map[d] = { date: d, total: 0, true: 0, 'partially true': 0, false: 0, pending: 0, unverifiable: 0 }
     map[d].total++
     map[d][p.verdict]++
   }
@@ -75,6 +75,7 @@ export function timelineData(predictions: MasterRecord[]) {
 interface TopicRow {
   topic: string
   true: number
+  'partially true': number
   false: number
   pending: number
   unverifiable: number
@@ -85,7 +86,7 @@ interface TopicRow {
 export function topicData(predictions: MasterRecord[]): TopicRow[] {
   const map: Record<string, TopicRow> = {}
   for (const p of predictions) {
-    if (!map[p.topic]) map[p.topic] = { topic: p.topic, true: 0, false: 0, pending: 0, unverifiable: 0, total: 0 }
+    if (!map[p.topic]) map[p.topic] = { topic: p.topic, true: 0, 'partially true': 0, false: 0, pending: 0, unverifiable: 0, total: 0 }
     map[p.topic][p.verdict]++
     map[p.topic].total++
   }

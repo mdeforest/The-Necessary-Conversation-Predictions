@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import type { Filters } from '@/hooks/usePredictions'
-import { VERDICT_LABELS } from '@/types'
+import { VERDICT_COLORS, VERDICT_LABELS, VERDICTS } from '@/types'
 import type { Verdict } from '@/types'
 
 interface FilterBarProps {
@@ -8,15 +8,6 @@ interface FilterBarProps {
   onChange: (f: Filters) => void
   speakers: string[]
   topics: string[]
-}
-
-const VERDICTS: Verdict[] = ['true', 'false', 'pending', 'unverifiable']
-
-const VERDICT_COLORS: Record<string, string> = {
-  true: '#22c55e',
-  false: '#ef4444',
-  pending: '#f59e0b',
-  unverifiable: '#9ca3af',
 }
 
 export function FilterBar({ filters, onChange, speakers, topics }: FilterBarProps) {
