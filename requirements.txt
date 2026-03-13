@@ -1,0 +1,12 @@
+yt-dlp
+openai-whisper
+anthropic
+openai
+python-dotenv
+requests
+tqdm
+pyannote.audio
+torch
+pydub
+numpy
+google-genai

@@ -1,0 +1,101 @@
+{
+  "video_id": "1QT_t6WxNJ0",
+  "predictions": [
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 818,
+      "prediction": "Trump is going to win all three of the swing states and he's going to win New York.",
+      "context": "Bob is dismissing the significance of the Trump trial testimony, arguing it won't affect the election outcome.",
+      "topic": "politics",
+      "timeframe": "by the 2024 election",
+      "specificity": "high",
+      "id": "186c46d5-27d6-4e92-b882-214cee9589d8",
+      "video_id": "1QT_t6WxNJ0",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 2175,
+      "prediction": "Eventually, it'll come to it... that's probably the first place.",
+      "context": "Bob is discussing the college protests and suggests that if the situation escalates, there will be a violent crackdown similar to Kent State, starting at Columbia University.",
+      "topic": "politics",
+      "timeframe": "unspecified",
+      "specificity": "medium",
+      "id": "38278802-e3bc-4723-b23b-19067a9a11e1",
+      "video_id": "1QT_t6WxNJ0",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 3225,
+      "prediction": "I think he's going to bring our economy back.",
+      "context": "Bob is defending Donald Trump's image as a common man and predicts his economic policies will be successful if he is re-elected.",
+      "topic": "economy",
+      "timeframe": "if Trump is re-elected",
+      "specificity": "low",
+      "id": "4add5511-bc5b-483e-9d8e-c1d7ead3acfd",
+      "video_id": "1QT_t6WxNJ0",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Chad Kultgen",
+      "timestamp_seconds": 923,
+      "prediction": "There are three outcomes of this trial. He is found innocent of these crimes, he is found guilty, or we get a hung jury and it's a mistrial, which I think is probably the most likely.",
+      "context": "Chad is analyzing the potential outcomes of the Trump hush money trial based on the first week of testimony.",
+      "topic": "politics",
+      "timeframe": "by the conclusion of the trial",
+      "specificity": "high",
+      "id": "70c9d5d2-9687-4908-83a1-6515806f47ed",
+      "video_id": "1QT_t6WxNJ0",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Mary Lou Kultgen",
+      "timestamp_seconds": 923,
+      "prediction": "I say guilty.",
+      "context": "Mary Lou is giving her opinion on whether the testimony in the Trump trial is leaning toward a guilty or innocent verdict.",
+      "topic": "politics",
+      "timeframe": "by the conclusion of the trial",
+      "specificity": "medium",
+      "id": "bd48cc87-6599-486c-9d2d-822a66443dad",
+      "video_id": "1QT_t6WxNJ0",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Haley Popp",
+      "timestamp_seconds": 968,
+      "prediction": "I think hung jury too. Because if you have one Trump supporter in that jury, it's a hung jury.",
+      "context": "Haley is predicting the outcome of the Trump trial, believing a Trump supporter on the jury will prevent a unanimous verdict.",
+      "topic": "politics",
+      "timeframe": "by the conclusion of the trial",
+      "specificity": "high",
+      "id": "a4232c3e-c329-4d0f-a2de-9e14012fa3c6",
+      "video_id": "1QT_t6WxNJ0",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Haley Popp",
+      "timestamp_seconds": 2918,
+      "prediction": "No fucking way. Can you imagine the negative campaign ads running against her? She killed a dog. Animal cruelty is the easiest way to get you off the goddamn ballot. No fucking way.",
+      "context": "Haley is arguing that Kristi Noem's story about killing her dog will disqualify her from being Trump's vice-presidential running mate.",
+      "topic": "politics",
+      "timeframe": "by the 2024 Republican VP selection",
+      "specificity": "medium",
+      "id": "913e0d03-47a7-4bf0-8f21-7961276f8afe",
+      "video_id": "1QT_t6WxNJ0",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Mary Lou Kultgen",
+      "timestamp_seconds": 2907,
+      "prediction": "Yes. You think he would still pick her after this? Yes.",
+      "context": "Mary Lou believes Donald Trump will still select Kristi Noem as his running mate despite the controversy over her killing her dog.",
+      "topic": "politics",
+      "timeframe": "by the 2024 Republican VP selection",
+      "specificity": "medium",
+      "id": "7be3d295-6b30-4c11-94ed-fd6766b062d7",
+      "video_id": "1QT_t6WxNJ0",
+      "timestamp_snapped": true
+    }
+  ]
+}

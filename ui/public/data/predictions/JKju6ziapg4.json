@@ -1,0 +1,236 @@
+{
+  "video_id": "JKju6ziapg4",
+  "predictions": [
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 84,
+      "prediction": "A nuclear weapon will be used in Ukraine within 30 to 40 days.",
+      "context": "Chad is reviewing a past prediction Bob made on January 29th. Bob had predicted a nuclear weapon would be used in Ukraine within a specific timeframe.",
+      "topic": "geopolitics",
+      "timeframe": "within 30 to 40 days from January 29th",
+      "specificity": "high",
+      "id": "24b73209-8844-45ab-b3c1-71aaae9d5844",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 153,
+      "prediction": "The Chinese are about to attack Taiwan.",
+      "context": "During his opening rant, Bob asserts that China is systematically preparing to take over and that an attack on Taiwan is imminent.",
+      "topic": "geopolitics",
+      "timeframe": "unspecified (imminent)",
+      "specificity": "medium",
+      "id": "091ad41f-063f-430b-95dc-03a8fffb95a1",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 167,
+      "prediction": "The Chinese are systematically going to shut down all of our grids. People who rely on plastic/electronic payments won't be able to access their bank accounts.",
+      "context": "Continuing his rant about a Chinese takeover, Bob predicts a coordinated attack on US infrastructure and financial systems.",
+      "topic": "geopolitics",
+      "timeframe": "unspecified",
+      "specificity": "medium",
+      "id": "4667902a-8221-4512-b8ff-2cfa0dad36ae",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 274,
+      "prediction": "Donald Trump will never go to jail because 'our side' will 'go to guns' and 'start killing liberals' if they try.",
+      "context": "In response to Trump's legal troubles, Bob predicts violent retaliation from Trump supporters to prevent him from being imprisoned.",
+      "topic": "politics",
+      "timeframe": "unspecified (if Trump faces jail)",
+      "specificity": "medium",
+      "id": "884e4228-723b-482e-9cd7-a6049a2c5c8e",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 461,
+      "prediction": "The FBI will be reorganized, and all the people at the top, including Christopher Wray, 'will be swinging' (implying executed).",
+      "context": "In response to a listener's comment about the FBI, Bob predicts a drastic purge and restructuring of the agency.",
+      "topic": "politics",
+      "timeframe": "unspecified",
+      "specificity": "medium",
+      "id": "9f7d20dd-f4a5-4ab5-86c5-1871f20b4549",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 553,
+      "prediction": "It's just a matter of months before the FBI gets reorganized.",
+      "context": "Reiterating his earlier point about the FBI being a 'crooked operation,' Bob gives a more specific timeframe for its reorganization.",
+      "topic": "politics",
+      "timeframe": "within months",
+      "specificity": "medium",
+      "id": "6d1d6863-0386-438d-9ef5-8c79b4d99eba",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Mary Lou Kultgen",
+      "timestamp_seconds": 475,
+      "prediction": "We're worried our grandchildren won't be alive (due to the state of the country).",
+      "context": "Responding to a listener's question about whether they worry what their grandkids think of them, Mary Lou shifts to a fear for their survival.",
+      "topic": "politics",
+      "timeframe": "unspecified",
+      "specificity": "low",
+      "id": "a31b25d5-a4d2-47ae-8629-2a645d53117b",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 872,
+      "prediction": "They will assassinate Donald Trump because that's the only way they're going to get rid of him.",
+      "context": "Discussing Trump's indictments, Bob expresses his 'biggest fear' that political opponents will resort to assassination.",
+      "topic": "politics",
+      "timeframe": "unspecified",
+      "specificity": "medium",
+      "id": "7c6c503e-578e-47fc-976b-963941f13720",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 971,
+      "prediction": "If Donald Trump goes to jail, 'gloves come off' and 'bullets are going to fucking fly.' There will be a war in America that will make the Civil War look like a 'puppy stand,' with people dying in the streets within a week.",
+      "context": "Chad asks what their reaction would be if Trump is sentenced to prison. Bob predicts widespread, violent civil conflict.",
+      "topic": "politics",
+      "timeframe": "within a week of Trump going to jail",
+      "specificity": "medium",
+      "id": "996b92c5-4b33-4629-8e00-b852c157e214",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 987,
+      "prediction": "If Trump goes to jail, Christopher Wray and 'his little fucking FBI' will be the first ones to 'get popped.'",
+      "context": "Elaborating on the violent response to a Trump imprisonment, Bob singles out the FBI director for retaliation.",
+      "topic": "politics",
+      "timeframe": "unspecified (following Trump's imprisonment)",
+      "specificity": "medium",
+      "id": "9f3ce9ce-5209-4b6e-82e7-34a7c99ac7e7",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 1084,
+      "prediction": "Your media is already starting to turn on you. You watch.",
+      "context": "During a heated argument, Bob tells Chad that the mainstream media Chad supposedly represents will begin to criticize the left.",
+      "topic": "politics",
+      "timeframe": "unspecified",
+      "specificity": "low",
+      "id": "ac6f7fae-6d58-43c8-a9ff-01b02862313f",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Mary Lou Kultgen",
+      "timestamp_seconds": 1143,
+      "prediction": "If Donald Trump gets sentenced to prison time, he'll be elected president (from prison).",
+      "context": "Chad asks what they think will happen to Trump in prison. Mary Lou predicts he will still be elected president.",
+      "topic": "politics",
+      "timeframe": "by the 2024 election",
+      "specificity": "medium",
+      "id": "a681fcfe-30ca-4a8b-b368-b64cf91c0466",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 1312,
+      "prediction": "Oklahoma Governor Kevin Stitt won't win again.",
+      "context": "Discussing Stitt's endorsement of DeSantis, Bob, an Oklahoma resident, predicts Stitt will lose his next election.",
+      "topic": "politics",
+      "timeframe": "by next gubernatorial election",
+      "specificity": "medium",
+      "id": "d457dddb-63fe-43dc-9a24-cf68cafd71dc",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 1333,
+      "prediction": "Ron DeSantis is losing ground every fucking day.",
+      "context": "Discussing the GOP primary, Bob asserts that DeSantis's support is continuously eroding.",
+      "topic": "politics",
+      "timeframe": "unspecified (ongoing)",
+      "specificity": "low",
+      "id": "217498d0-807e-4c55-aea9-c6529fecf56c",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Mary Lou Kultgen",
+      "timestamp_seconds": 1378,
+      "prediction": "If Ron DeSantis picks up more steam and high-profile endorsements, he will then become probably Trump's VP pick.",
+      "context": "Chad asks if DeSantis gaining momentum would matter to them. Mary Lou predicts it would lead to a Trump-DeSantis ticket.",
+      "topic": "politics",
+      "timeframe": "by the 2024 election",
+      "specificity": "medium",
+      "id": "dc33474b-ed87-4791-852d-00fa37890e9c",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Mary Lou Kultgen",
+      "timestamp_seconds": 1445,
+      "prediction": "Donald Trump's vice presidential candidate will be Kari Lake.",
+      "context": "Mary Lou amends a previous prediction about DeSantis being VP, now predicting the Arizona Republican will get the spot.",
+      "topic": "politics",
+      "timeframe": "by the 2024 election",
+      "specificity": "high",
+      "id": "a2f4b927-c5ae-4b73-a05e-7f46c29f6389",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 1542,
+      "prediction": "If Donald Trump becomes president again, revenge will be a thing. People like Jim Comey, Christopher Wray, and the '51 people who signed that letter' are all going to jail.",
+      "context": "Arguing why the establishment fears Trump, Bob predicts Trump will prosecute his political enemies upon returning to office.",
+      "topic": "politics",
+      "timeframe": "during a potential second Trump term",
+      "specificity": "medium",
+      "id": "15037c05-79fd-4535-9b88-814d20ae9ecb",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 2515,
+      "prediction": "Companies like Target that promote 'transgender clothes and all that crap' are going broke.",
+      "context": "During the discussion on 'wokeness,' Bob claims the backlash is causing financial ruin for companies embracing LGBTQ+ marketing.",
+      "topic": "culture",
+      "timeframe": "unspecified",
+      "specificity": "low",
+      "id": "9687d216-9db2-4563-b234-bf192ed953ca",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 3143,
+      "prediction": "Target is gonna go broke. All these companies, Kohl's is gonna go broke. Chick-fil-A is gonna lose their ass.",
+      "context": "In the 'wokeness' segment, Bob reiterates and expands his prediction that companies embracing LGBTQ+ themes will face financial collapse.",
+      "topic": "economy",
+      "timeframe": "unspecified",
+      "specificity": "medium",
+      "id": "87c0f1df-cfca-4b90-9553-8537c2ccf1d7",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 3338,
+      "prediction": "Anheuser-Busch (Bud Light) is going fucking broke.",
+      "context": "Specifically discussing the Bud Light/Dylan Mulvaney controversy, Bob predicts the parent company will face financial ruin.",
+      "topic": "economy",
+      "timeframe": "unspecified",
+      "specificity": "medium",
+      "id": "b76c2394-0970-4209-a45e-b612e16e0216",
+      "video_id": "JKju6ziapg4"
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 3526,
+      "prediction": "We don't know what morning we're going to wake up and the Chinese have invaded Taiwan and then the party's over.",
+      "context": "Stating their new motto 'one day at a time,' Bob expresses the imminent fear of a Chinese invasion of Taiwan.",
+      "topic": "geopolitics",
+      "timeframe": "unspecified (any morning)",
+      "specificity": "medium",
+      "id": "cbfd91b1-1e3f-4308-883c-61b242738136",
+      "video_id": "JKju6ziapg4"
+    }
+  ]
+}

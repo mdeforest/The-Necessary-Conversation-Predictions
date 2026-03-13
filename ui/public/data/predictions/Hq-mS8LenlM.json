@@ -1,0 +1,137 @@
+{
+  "video_id": "Hq-mS8LenlM",
+  "predictions": [
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 1109,
+      "prediction": "Donald Trump will be the next president of the United States either by vote or by force.",
+      "context": "Bob is expressing his belief about the 2024 election outcome, stating that Trump will win, implying force is a possibility if the vote doesn't go his way.",
+      "topic": "politics",
+      "timeframe": "by the 2024 election",
+      "specificity": "medium",
+      "id": "abeee322-e80f-4f52-bc11-066f099ab8a2",
+      "video_id": "Hq-mS8LenlM",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Chad Kultgen",
+      "timestamp_seconds": 1394,
+      "prediction": "If Trump is elected, I think it is a matter of about one year until the United States is very closely aligned with Iran, Russia and North Korea. And that becomes the new world order.",
+      "context": "Chad is speculating on the geopolitical realignment he believes will follow a Trump victory in 2024.",
+      "topic": "geopolitics",
+      "timeframe": "within about one year of Trump's potential inauguration",
+      "specificity": "medium",
+      "id": "7b7d89a0-b551-4b25-815e-c4c3d80afcfd",
+      "video_id": "Hq-mS8LenlM",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Mary Lou Kultgen",
+      "timestamp_seconds": 1339,
+      "prediction": "If Donald Trump was our president, this fucking war [in Gaza] never would have started.",
+      "context": "Mary Lou is asserting that the Israel-Hamas war would not have occurred under a Trump presidency.",
+      "topic": "geopolitics",
+      "timeframe": "unspecified (counterfactual about past)",
+      "specificity": "low",
+      "id": "bb69a8ab-108a-4df9-b037-eb0279f5c829",
+      "video_id": "Hq-mS8LenlM",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Chad Kultgen",
+      "timestamp_seconds": 1386,
+      "prediction": "I think this [the Gaza war] will probably be over by the time he [Trump] is sworn in.",
+      "context": "Chad is predicting the Gaza conflict will end before a potential Trump inauguration in January 2025.",
+      "topic": "geopolitics",
+      "timeframe": "by January 2025",
+      "specificity": "medium",
+      "id": "54791fea-5c62-464f-91fa-c2570fa607fd",
+      "video_id": "Hq-mS8LenlM",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Mary Lou Kultgen",
+      "timestamp_seconds": 1426,
+      "prediction": "If Biden stays our president, the country that we know it is no longer here. It's gone.",
+      "context": "Mary Lou is predicting the end of America as we know it if Biden is re-elected.",
+      "topic": "politics",
+      "timeframe": "unspecified (during a potential second Biden term)",
+      "specificity": "low",
+      "id": "6017d2f3-6fbd-491b-9967-b483533631a2",
+      "video_id": "Hq-mS8LenlM",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Haley Popp",
+      "timestamp_seconds": 1576,
+      "prediction": "Now they're coming for IVF. Then it's going to be birth control. Then women can't own shit like gay marriage is going to be fucking overturned.",
+      "context": "Haley is predicting a sequence of rights being rolled back following the overturning of Roe v. Wade, specifically targeting IVF, birth control, and gay marriage.",
+      "topic": "politics",
+      "timeframe": "unspecified",
+      "specificity": "medium",
+      "id": "76713ae8-83d5-4e03-bf4f-2fbef25ae454",
+      "video_id": "Hq-mS8LenlM",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Chad Kultgen",
+      "timestamp_seconds": 1593,
+      "prediction": "I think you'll have that [a situation like Putin's Russia] with Trump almost immediately. And then I think he's going to get the Supreme Court to say like two terms. No, you can do three.",
+      "context": "Chad predicts Trump will attempt to extend his presidency beyond two terms, similar to Putin, and will get the Supreme Court to allow it.",
+      "topic": "politics",
+      "timeframe": "unspecified (during/after a potential second Trump term)",
+      "specificity": "medium",
+      "id": "55437788-a6ad-48b2-84d2-46fa421530d3",
+      "video_id": "Hq-mS8LenlM",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Mary Lou Kultgen",
+      "timestamp_seconds": 3059,
+      "prediction": "If Donald Trump is not elected, there will be a civil war. There are some type of a war to take the country back.",
+      "context": "Mary Lou predicts violent conflict if Trump loses the 2024 election.",
+      "topic": "politics",
+      "timeframe": "after the 2024 election",
+      "specificity": "medium",
+      "id": "d46b7f9b-7f3b-41bc-a322-cd347aa04367",
+      "video_id": "Hq-mS8LenlM",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Bob Kultgen",
+      "timestamp_seconds": 2650,
+      "prediction": "He [Hunter Biden] will get off no matter what he says, no matter what he does. The DOJ will not prosecute him. He will get off. This will go nowhere.",
+      "context": "Bob is predicting the outcome of the Hunter Biden investigation, asserting he will face no legal consequences.",
+      "topic": "politics",
+      "timeframe": "unspecified",
+      "specificity": "medium",
+      "id": "e32e1736-3c6c-4208-8dcf-c1b01917025c",
+      "video_id": "Hq-mS8LenlM",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Chad Kultgen",
+      "timestamp_seconds": 2831,
+      "prediction": "Third parties in this country, at least during my lifetime, have had no ability to gain ground or take foothold.",
+      "context": "Chad is making a general prediction about the continued failure of third-party political movements in the US.",
+      "topic": "politics",
+      "timeframe": "unspecified (during his lifetime)",
+      "specificity": "low",
+      "id": "66b1b541-a4d1-4638-8767-8493e051a91a",
+      "video_id": "Hq-mS8LenlM",
+      "timestamp_snapped": true
+    },
+    {
+      "speaker": "Mary Lou Kultgen",
+      "timestamp_seconds": 0,
+      "prediction": "The border will be the most important issue of this election.",
+      "context": "Mary Lou is predicting that immigration will be the top issue in the 2024 presidential election.",
+      "topic": "politics",
+      "timeframe": "the 2024 election",
+      "specificity": "medium",
+      "id": "aae5537d-7321-4a0c-8e87-cadb063b4888",
+      "video_id": "Hq-mS8LenlM",
+      "timestamp_snapped": true
+    }
+  ]
+}

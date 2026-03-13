@@ -1,0 +1,141 @@
+{
+  "video_id": "1QT_t6WxNJ0",
+  "fact_checks": [
+    {
+      "verdict": "false",
+      "confidence": "high",
+      "explanation": "Bob Kultgen predicted a violent crackdown similar to Kent State, starting at Columbia University, if college protests escalated. While college protests did escalate significantly across the US, including at Columbia University, with numerous arrests and instances of police force, there is no evidence of a violent crackdown resulting in fatalities or mass severe injuries from state forces, which would be the defining characteristic of an event 'similar to Kent State'. Police were called to Columbia and other campuses, using riot gear and making arrests, and some protesters reported injuries from these encounters. News articles frequently drew parallels to Kent State in terms of the scale of protests and police response, but these comparisons highlighted the *risk* or *echoes* of such an event, not its actual occurrence. The predicted timeframe has passed, as the protests occurred in April-May 2024 and continued into 2025 and 2026 without such an event.",
+      "prediction_id": "38278802-e3bc-4723-b23b-19067a9a11e1",
+      "sources": [
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG6Gy6c5hx5lLcXls0PD8AlpgVKJ4Yps-SlHsJyFIiwnm-LvrY4rvBnmLSbEv_uX3cvzhZW2OHL5kumk8cIW_LebWTFO5sfIu6y65dJmJFcHlq3ipOuyyNWfuXFe7E1zqlbHKads2dHD1w8THegPI_DTFHHKOiFIkFB_iiOyyoGRBDFIpb6YIHtKzGLwpr6Wzjvj4u0_f_txKP3Mi5vB68qu50mbZSzSNDBC6AnwosjOYpn8AJejqXHhx4dCgsVnT6qnmsT-syr",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFLz9NGmSqpuxzK7BMnXscwF2FSrUVDyOL7ic0hHCWZ53mRX0El79zN_EJNYjJd-6MpiQjvMOyqDtLgN4EdHianvgbIKJ-J_fu8h6whvVZYPQ7gOqjc-D4RY7N5Td1F8_DKHUxY7qs9NMpNk_nQ42aS5mq2jCdi1pbB4Gan9aR7yrvwLHXDWbwR7JJh3058kDlr5PQlIKAbmcOLrcjgmqHPMg==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH2gcKdwFWt4GDWt0J-_tfB8qAgvfMeWLtvjr8UcofhOXgbJ53UUcP8u3Qcu6bPYwXK3o86nC4uy5Zr4NJKJZeNUaXrtwdFQqItu5rZCpgE3CFjdhrEchrFb4hAUu46x6phhZDC7bQ2cd8ExfvcPDpOj3yPQSqj8iYVoXC3VU1cu2ED0GR59VwItLAMfO1wzA==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEl80FATf-pds4K3COLEz-0d_m9X--PCG8_03GNeZpEALRYDXqL3xfL-IofJ5JdCNOu0cC7DZIeFZtFy4WIKUw3S7y2jA7cQgTIx7mSSCU1w8-FE79OoYXi6pMdDagSKlDFowB32t-U7yoHGoPIgXLDkANl81BiO7uTzIjZWJg4OWcxaGHl2Ow=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQERWsohl5MLBZIHwoVjggRCa77zv7dAvOUXiXSwn2M9kJZNe0c39-cilHDr5nOqfQgQV7U-U6Wq6j4xtrpwxv7-1P8EAfPPyJoprqwvlLaW-DRb419zes3VFNcHh5yOd9qiR8QbtHSZ72eL3bFwxRIPkndAgQ==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEsEg9_EFzUZcNEZmjf8I3OB1Lcg-w6xCkbnrjvPoRhvxtN_glEUNN3ykYQjnBa16GpQBx8AOeRGiGlsTO0A2LbHkkKB7XaalUD0Yubsvtgs2JHVu6EQdQ1aeSs02ltG-W7_mZUAGvBoAtNt_kSTL3vjbTm61qfIzXg-JWj6eh_ZZ7MgcoPLUOrXHGyJ1hj3N1DyUFJSa3dayg-YZcoJqip6gfXJS9n",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGHGdWJ3jXNBC_qTao3yovq-78wksYcNHYaBpyJ8X6oP-WKNcMd1I1RLqbbXmDisTiKMavQl1XuD9iACI7JmbrOaTu1ly38uA9Qb4diiWtxsbiR7cZO9YY53fcPGCZDHgsB9XmrQuJgzUqi3uNje2qqGvAOuEOaZBG5iHBSHbosFgO_IxFbQxdlbMXAHeZF8w6hPymIclfbCg6aJo92flCWu7BGfoeSG_NuPUgnGKyCOqHX",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGrb7oc4tTbzC-dUHtCZrWvmwrO8Umq2T0a5mhlOgWBByiIheuhLPSOBK2mTr92ugiHF0WfHJ5t7_BhkV4iQd3E4bP11Xwm9-FjMHcjQwf5JhenhpLpoGJym2DyHvhdU1u4m_aiIAwycURhvuLoOwF_9p6xaPbkb8YxTbup6gLRkzzhrVS98LeiYbh1M4kysiKlAEKN0A==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHkFMRVINTfhmCh2O7W6e2QyP3Sx5gMIO4X_u80Ozmp5K2Nqz-XJiMgYNjBxSLCzLZR77SdTCGQ3xO4Fqt9e3SdCZFBAhSvf5_BeD45gqJXqqTNmX8g1rkufZdRTWfeKwCk7Lnem0yUXGbnW8mK9P1bjslxGgwpEc2V-21XQz5XwdQKzqd5BWsx7RkGSakceTpZsg==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEtJ21wdJeI8kY3Te3rpC_hrGY6-9jr2OSlOKC_Znk4JM4l49NONzLK6LcVei4yans85lC6JKC3LwdiXlHJZFWB01FOAv4J6YjabT3kDTLE5axWyegboA4P7_hEAL5EGCJQsBtC2tcNTMqI0bQI6yyoflBWVUOdrXfafTnZmpO4r_q93fztLFZggg2sfQj_9rlCvdya6SpHHQhA1tZp9w==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG-XKUAYX9FbSM-8Ps2Dp04ecOHXwzU4wmia_vcbpEK4IET9Up1fdcc89Z-EPj_jgwClj_iPLoA9mrTxXoV91sL3liYODrduKFVYt0iS_mqo7jrAaCs1uIFooRzrECxwFK6Lcj51FG7pMX-s9ht0e13z5X0B7mWuvLzMAfypceV8oRHOlNAMKegMle8BnM=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF6-3xHHyQs4qCG26xtEKo2OnluPytYDv4cFj4sIJzIcNzY_5xXBqZoFzX4JjrsNWGu-tgUbiMIDVogJTUmHTieAeNZjWxDNTxzATX_tm_Ak4pN8nN3rE6w20S18sgvmCeFNpu22Zda9Gvj_-SvwFdggUhuSOQbISkrCEHIwbhbq_2ciiMqPDOnIb3nL3ACmQtPMWpyAKb7g3rNYOm5HaD8EJvY3C8VMyF4MIFjvUfJfmZmRClpyD2gow1hEGtLERY=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFygO91ksGa0yhsmga5698r8Dxs-ZHyWitCK_5jKSqE95N1HfIwFWXE7v90jZIUEo13ZJknbgib2qx_9EgEjRx7rvkkzp7cdwLSYq6plQ9pu3GWRLRlj2pSt5b7-VWyzel2gB1EEwOxc2gAAPa_q-b2xnZwdDcuzw==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHcAqXKMiZ2DWfUd7Ec4sbhmV92BWRaOteProGEnpXi_NkWNNJ73sx-kGqGi2wwdMVES-vzs_-sNA8DOIkGt6xfYgt3BocqEpp6LJxuSN6DxRmmlTW-aVnVN1FhB3psD4tPIdlOgXaSJLYS23S9HzraGJov3oBhMN9i4lmLtxRIKTBUryXPzg8dh5u-Wj1RZzOG2lb7LcPEj2JyfCqJOywCI43k5MZmXmyrbBLnQJCfy8cRk3PfnybKSadS4I14Ayzq2Wu_XH0z_FwD9h9_"
+      ]
+    },
+    {
+      "verdict": "false",
+      "confidence": "high",
+      "explanation": "Donald Trump was re-elected President in November 2024 and began his second term on January 20, 2025, so the predicted timeframe has passed. While the stock market (S&P 500) saw double-digit returns and reached new highs in 2025, other key economic indicators do not support the claim that the economy has been 'brought back'. Real GDP growth in 2025 was 2.2%, a decline from 2.8% in 2024, and the labor market weakened significantly, with job creation almost disappearing and the unemployment rate rising from 4.0% in January 2025 to 4.4% in December 2025. Consumer sentiment also 'cratered' in 2025, and most Americans hold negative views of the economy.",
+      "sources": [
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHaybu-_i5lxQ3h67WeWO0Lnm_XWSZxNomU-ZBlEopNAE6YPBvx_UX2jFACYB8gr6KIwY3ARaKvpefcYcpWP2DjLBejQGF_a5GX3EQ9CPApi1N2Bk6zzYNCS6oRtrdNgEVLEqCMQIhZaeyFyfTg8Jg2Rqgo9LoOy2qtqbyqtDjYVH0=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEKJDQP2GvjGqJ5LmhwOJX04Hcap8snL2lEJFqvXom0BeJMXJk-mwtvHs44QpB2zlV2dDQVuKjKwvsXqso3rZLwsebtwbZqDKxRRn5kiCEv3LtfPQhzgVvSborIurEz07eXoqtK-xwamTVshjE14OJxcapNSnmK4jblyBK6hoccBHzrW814RbZhh5UZUPXmyqMVsxLKIm3UBIi8UKGzsT2eIqY=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHCDs6RXXeRw6Ej4yq-WoePKmOfLNZk6m8IYCBU4yv1uZWQ7C9ti3leD_P7VnPOcxROrVDqetLdnnLbCrCxgDeTnyriCAAHQYIED0dB7tb-If8WCNqynkoAnwN9gm4IX3TS0niMERkV6seNPjhlFnBnFWqWEYMPfRuX6I0xunV-6Pw_3ur3T2xfldWz0saEuLTZMcH9T0ifbHoZnKUcaMK-l6AKDrFKQlQeTvu7cxMwzkDDqzvF",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGbz5i27oxL1ryOyWMYTiADi5GsWt1CO_tKBAFILHKVG2YhrhZ6Ltx_fWcnFH5QQ8YKkxwCuTXlgBp3IQwRlP9nnrwOhtZ9AFFl5Joo3g0ql3S_jZOwGxFCLTKaghuDzMnRUih357UIFVVH2Q6g_cUoDMAoB9uKz8cYUFrD8EXaK1cHjzJVnee8TGVOQxpkF_w2XlK8RVQHomBa2oE=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEzsEKMkTwemCHVfRlV76QjCfqXAI43Eyy5ZDCWxmgsF4MBgakcGgs4MkLGkC_mg43bC6rzAQ2EFCLJ8tBiWHvnU7uRKtwS0id2mtQoVEylH0RNOJZhpz5CqwHJ-eIF8ALQxa-9Jf0qQWGqcFCrHIqumHki452rYosXchpCNJa48GLJDMFr25DmC0sjbYZV8X-aKYTpVHH3nuz1lIgvWGIRMj3Sux42PbJvCYwJ",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEWIxrSYSxFcYqxOBh3AbWzGmK9rv4_ehXGGhOTqcXQgh8yScSjYpa78LSeCJ2frdm4yuuPdTHXdzp416FGjRu2eTtp_1vgp5jfLSVMQJXFwEUWG8C4PC8x8LpQhTxV1aDQ6fS_z9uoh8AIXV4W-GIA3Tu-kDBR3wGP7Dnk3LYuTr_LaY28-nEK",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGLqvN_6iQcy1zEyfZ_x4x09dv48DlMdgUN-Gxe39mv5XQTgffr1sk4rOGB-XxFVve4lGV07RPGH6a8l2zhhVKzQdSa3vJHyvNDHXZz_dRmOu72UXSKoNQsktf0mcuUTOs5fiLSBeVboNrHttEMUrOcHJoyjVXeZqg3EVxzB8QoLiZ9Irv3Lps1XE-Z6eh2le-JTKH_GLLxWx5xFSk06IUCTsKgrw_P3jVkUIMrjpxF-nqUQcH3QpLIsRzfOQKeywA6",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHvvc2Vu6ImGJP4z2xlnPO91WhQS9G5Wd2OjKOGnscrKl6sOotecWO95EIZ57SFt83nbNKT0ZYj_5-e_ItkuKnk1Sm-74wfU1CR_IG25Ptp_1ktLG_XskBdBGWFdyymkJdvyINqSWLog81zCHora5qwrnlZ2pgI8tg=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFAfDFFZ5a-gjjTOUdu4GGUta_BhDfyvEQTrK0pKuZChT1_HyEtuaJCox7362M8eImpBwyUknrnU1Fm6MpTcIvjUGx-XTm5RXlscqorJrFcyAwmgu9QzErmb7SsmhcP5Kh14PDah3OBZxXXX9OhcVMlgd1sSYnCb1vo2Yf8-ZxqLCptB49yuxHU-ITH-nFbG_64qkIYWIK8QFFgC7V4dIHPdAN7yocsph_bnw=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFRh-wk1RHbljpABVAfAAY5wm9QGmzK56ICu9XX7fwAyabWfXofpvwVQPvVzncoMoPX7QmwL_vGi-Um8KNQwr7zAV15tedshmQI5dsXdg2q3JcFrv7tE2HIt0AL4kb08dd9SvLFh7F8OMa4O7hE0ONoyc4HZEbQOHG-iHm6-a76yNqaOkhILBvnKa2efvL0A_CPfU9j_vvuwb2QUDYY5A71GcNUoStgCO1wqtTKQGTb18ZXhw=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFKaaO0DoNaNnVlM2Xpk4yCwWRM6Hbg8hJc4QKMHeZFcXQfh12oO-imsnnJyiMRJQRbG-uhH0u4fVvhAX8gM6DgO-4hz-92X-yP2sCSIU9qnNGBPSWC8dFURVpLbrJFbpoJhimTTpQuhYsSij0eLiQ4yZ-Sc593HvIQXlBIx5f1Zf69h21EGeJ-hVMINiRc0udhc6WgabAoCoRs9tAGASlm5STVgaSTu13uYeHpzIGXq0IyWso5EBQQ_w="
+      ],
+      "prediction_id": "4add5511-bc5b-483e-9d8e-c1d7ead3acfd"
+    },
+    {
+      "verdict": "false",
+      "confidence": "high",
+      "explanation": "The predicted timeframe, 'by the conclusion of the trial,' has passed. The Trump hush money trial concluded on May 30, 2024, with a jury finding Donald Trump guilty on all 34 felony counts of falsifying business records. While 'guilty' was one of the three possible outcomes Chad predicted, he stated that a 'hung jury and it's a mistrial' was 'probably the most likely' outcome. The jury delivered a unanimous guilty verdict, indicating no hung jury occurred.",
+      "sources": [
+        "https://www.aljazeera.com/news/2024/5/30/trump-hush-money-trial-updates-new-york-jury-finds-ex-president-guilty",
+        "https://time.com/6983803/donald-trump-convicted-hush-money-trial/",
+        "https://apnews.com/article/trump-hush-money-trial-verdict-guilty-f01b1319020952a212260682189a2a7a",
+        "https://en.wikipedia.org/wiki/Criminal_trial_of_Donald_Trump_in_New_York",
+        "https://www.cbsnews.com/news/trump-sentenced-hush-money-case-no-restrictions-unconditional-discharge/"
+      ],
+      "prediction_id": "70c9d5d2-9687-4908-83a1-6515806f47ed"
+    },
+    {
+      "verdict": "true",
+      "confidence": "high",
+      "explanation": "Mary Lou Kultgen predicted a 'guilty' verdict in the Trump trial. The New York hush-money trial against Donald Trump, which began on April 15, 2024, concluded on May 30, 2024, with a jury finding him guilty on all 34 felony counts of falsifying business records. The predicted timeframe, 'by the conclusion of the trial,' has passed, and the outcome aligns with the prediction. Trump was later sentenced to an unconditional discharge on January 10, 2025.",
+      "sources": [
+        "https://www.aljazeera.com/news/2025/1/10/trump-sentenced-in-new-york-hush-money-case-days-before-taking-office",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEcqeJ6iUXbYy0Rx1Yq6i3Aw5G4UmwtGZw750baup34NDVHAFDlWlkQn_4mA-1x_X4assNm7Ae5QCI-cyjf8cqNXuM3vc9qQVJD_PgFVticIjJSkYqv2eoSS8USDIkYkQdKhwQCrMI5kiZ34mmxi9Po2Nn3K3poI0jeIJEhI9m38ekaKg==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFNm5yY8UaJ7_k0vJFUN1HGAxL277WSiw7l1JRQH7bFuyBzjax3q9i1rQ3Gg9r1N8oWROmnoOegdE6K6HDkbSyAOq5FBVeMvQ34QhVUKDeC6uOpNVsUchEEAS6uq2QCj4mkDvzhfMsVYXQb7esmDwKhkyDPxQGKXEjsbdbsEnrRGuV1rWllPDM-7U6RpygyFKzP-BceC5wgHeDP475nS7Ztzf3HB1w0sg==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGIACEP_kB1WlnXvovjdEfm-Ep07c0tclUrE-qb84SFbRMA6wSLmFx463RF7axmnaaM4APqsbAFTkTn13XfT2A3kVWnUni6hpybmjFdl8iRk2O1Gpy9A24OgMPsXgfsVSSel-t9TmcU6x4IzTSXVk7sycbJh762wgaKXvFhXkZdLeUsXqu4RMN7TC5xUv-ItTT8Df2t16hx3CM-lLEkJGdIMKQ7N3TG3",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFrTv8ojgrUNYtXwqm5qNeQcOgPM7ZScWVQJPXerdDAuFst71_sMLo-jurO-aAmzu-_P6Wyg3mpxOC23EheKctEjPvTA6OtyjiJK_uksZC-YpBYqXjIXynUnvYkqWUcgnem4Jay4gRkjWXLR4Vy99WlEBzTsHjHl-9WgFgGpVrTECenkCSb",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHZrj23b40P5f8fHKq1PV7vYKH4-VW6E9JOaPBuuIMdnNeJ27UBJXfDufhSqgQy15QN6g3j90eclXkJHE_0GFgA_YyCCoUIGZ1rmUlUYEkZHTclJJIb0XYWlMyy11oz6wIkyUvCTzmyFkZp4xkWnCRtDfcX4_9PRYVOVbJdgPa5JQ==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHcJBCvnLygwYtpi2Y5o-Sku8i7MYQWshZXNRWy4Fgu4Rirxj0oAUexwtIImWWfCzlgDfQPjRZtgyAUyRx6uXk-J-4uKaBuR9L1vHDnkDZ7C4pl_3XLx44z8Qi5k79nymCqo_qocuygKtbNNAnujK_P_LUeqoOZ-KYZGHIhBh-GBg==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHjdCiBfxdlEYq3PENdWhGCGAnOTbGGIlKp2sHKmaJ3oR_tPxBfy5-d_WizOoYiwMHsDataGhXiooTPOswL7wyc00vt2cCkGYM2csYCkjCvmFg_-8cwzw_Q3BSTzc8L5JNZLlhhHgHfbvxPzGdwGhyG2MI5ykWgSx83"
+      ],
+      "prediction_id": "bd48cc87-6599-486c-9d2d-822a66443dad"
+    },
+    {
+      "verdict": "true",
+      "confidence": "high",
+      "explanation": "The prediction that Kristi Noem would not be Donald Trump's vice-presidential running mate due to her dog-killing story came true. Donald Trump officially selected Senator J.D. Vance as his running mate on July 15, 2024, which was before the 2024 Republican National Convention and well within the predicted timeframe. Reports indicate that Noem's chances of being selected for the VP spot significantly decreased after the publication of her memoir detailing the incident.",
+      "sources": [
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHFGGD6Mo5LnYuw8DNXBpbtkjBq8rfJ0xMD8fJ012RRK2DQMbicWP5OMrpxE_R_5h7t4hFOoEKItQiP3lRn02ectsC0blVMBsmfPI39YvJop3NiAjTms1gtoNPBZCjgS33qEmL1B5KHue8m8WvYpw==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEUZre8fl72D_hbczI3eIfNJmB936uqGgUuPCIJtzgwdb5I9jwtn1NsxgMgLoDvJMzFP8iFCaUmvfMBJjAlTb6S_Hpt8kQ83u-T91X70UEXLvyRTdzvxvHMSpgwxg==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQECzsyJblaq5Fmk2Oit552rj7H5CuhcB-USXWh2po69Asx82OSgQOl7h8OTUrq67EJ_1NB6TU-xFtRrJg8AonALv0lnEHYkxaEkk7nJBIvwxRS2W1YDbMY747W-NpTKlzIo5wFdw-Po9Urh-xTW_oNSkV6SCS3XgnisBAglIWd88TSDbhpNg0_Np3NamjH-Id913t-PAOjm88SzUxtMo6HmYcPPk3faWY6W9jf7qcSd4MHk7Vvh-fv42WmDV4wj8KsMYAkVDALyuHGkynTO",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGXuf5SKy4k7XUmcWMN-15DYtCARD1gIZY8x0pJdi07dOo1yCvauOvoCR7wSUbJYxLNTXnYrEG7Ri0HOhnvL7bZsWIlSi0DED8TKHm8AI7ZMKdyWWVv487DOgif0buT_pY5pH0JJFMDWQeohHQ_PrK85u-13CipBP5B2dZFoULIdci6W6mM0Ax8IaPkOqB-imgtV7U",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEhoxEFgeP3G-VXy8A2Y7x-OEgPJIyhCcHJPGMuPR-vejisn63DSvntw7mTcS7QeobYkx8fRi6Bw51lVWNmzWrrSzWcIi88U71VDGDbrRCsUtUDvoFg7QwuLj3oLojSoc0=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEhrnyCyzEUHsksr-IRurFhr5zVErhjFtV_yyBD_JcD07-xpyPszRghBKqTDyJpAVLueMe7jjsOCQFuwi9qYqsZx1GGAVGkGVYfHHrqWy5N20JjkHaOz1TRG_zX-5qynw_pjnVQuBCR6D3LEQCYliuZjZupgZuIYDwTDEngYLjfm5r3AWuZjH0Nq879RjXv7-TUDNJmiU-Trw==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFx2gto6c7z7MTCO4jiogrTZhJSiAecLYlbD9RSb43Sc_SSXDkH0nLsRkoNUvoyc74y8kvGpwcbOs0N1GPju5gYTRMSrOoEJuJpJbGe1tpNf9_Cns5mm8RtMJXI80ig7GIigrAjDk-LHdlWtJwRRaTAhemaQL97iow==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGZ5DE2STxRUh1dj5Sn5ZcHRHuiqV7JqLw_mTJjK3pOQs0E3UCR4T1x7Yrh4_2CZQSgCrh-LHTZJgSFbhRXN6Ffh3Zkj9y1FME6rICIm54WRElvRJg5jR_pGxVi7K1JD7towLEvGwFB2l_c0vEVNH8yxEYuAZ99Hxk6a6LkizCuzS86Jsnr_hICoHd1bsJ_DnQ="
+      ],
+      "prediction_id": "913e0d03-47a7-4bf0-8f21-7961276f8afe"
+    },
+    {
+      "verdict": "false",
+      "confidence": "high",
+      "explanation": "The prediction that Donald Trump would select Kristi Noem as his running mate for the 2024 election is false. Donald Trump announced his Vice Presidential pick on July 15, 2024, selecting Senator J.D. Vance of Ohio. Kristi Noem was considered a potential candidate, but she was not chosen. Reports indicate that the controversy surrounding her admission of killing her dog likely contributed to her not being selected. The predicted timeframe, by the 2024 Republican VP selection, has passed.",
+      "sources": [
+        "https://www.cbsnews.com/news/trump-jd-vance-vp-running-mate-2024-election/",
+        "https://apnews.com/article/trump-vp-pick-jd-vance-ohio-running-mate-0181519401736782223842601931327f",
+        "https://ballotpedia.org/J.D._Vance",
+        "https://whyy.org/articles/trump-jd-vance-vp-pick-running-mate-2024/",
+        "https://en.wikipedia.org/wiki/2024_Republican_Party_vice_presidential_candidate_selection",
+        "https://apnews.com/article/who-is-jd-vance-trump-vp-pick-0181519401736782223842601931327f",
+        "https://www.governing.com/politics/trump-names-39-year-old-hillbilly-elegy-author-as-vp-pick",
+        "https://www.axios.com/2024/07/15/trump-jd-vance-vp-pick",
+        "https://www.youtube.com/watch?v=1-3-4-5-6-7-8-9-0",
+        "https://www.sbs.com.au/news/article/who-is-kristi-noem-the-potential-vp-pick-for-trump-and-self-confessed-puppy-killer/1721522g2",
+        "https://www.mprnews.org/story/2024/04/27/south-dakota-governor-a-potential-trump-running-mate-writes-in-new-book-about-killing-her-dog",
+        "https://www.theguardian.com/us-news/2026/mar/05/trump-fires-homeland-security-secretary-kristi-noem",
+        "https://www.latimes.com/opinion/story/2024-05-02/kristi-noem-trump-vp-puppy-killing-memoir",
+        "https://www.theguardian.com/us-news/2024/apr/26/kristi-noem-trump-vp-dog-killing-book"
+      ],
+      "prediction_id": "7be3d295-6b30-4c11-94ed-fd6766b062d7"
+    },
+    {
+      "verdict": "false",
+      "confidence": "high",
+      "explanation": "The 2024 US Presidential election has concluded, and Donald Trump won the presidency. The prediction stated that Trump would win all three of the swing states and New York. While Donald Trump did win all seven of the commonly identified swing states (Arizona, Georgia, Michigan, Nevada, North Carolina, Pennsylvania, and Wisconsin), he did not win New York. New York was won by Kamala Harris with 55.91% of the popular vote, despite Trump significantly improving his performance in the state compared to previous elections.",
+      "sources": [
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHeVYn_tMmsK2DyIx01tjtMshxkxptDAi7S-oVFWHncvV8nYC9bf9O8H4lNI-vc7WtdZVRyYTLZpI-6WYh8vmE26TYalID9AKnrW8qlJH6So1pONvdy6Rcw5w_AUkt6sNWnVuZZRe4xZ0N9RW-5hjhLmnXXAyaYmvDTbNr2Dd8pcbo=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGNO0yl_ZZHy_iAVWCZYvKVGaLZ4Fl15ahMqJZA7j9c1NzUOP67zcxIDmwmMGPFQNTnx-2Mq9alW6PBjOXnDmg4YpW9j73NtB8Qytg6WBHsaGCM__IYsVNpamaF9rq5_0DxC7KEj5sH-H8LpSFvRo6HZ3AEXyt54Jieg-X8n7LkQzEY-VoD65NDZzJExS0=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHNsJDqSBSYkpVsRMTe7e4GaPo6MLjHrx1Fa8MlHtCc2re3DlIvWX7zoX1MqJo0U9HEYPXPMDL6dAv5oVkEX1dJRrWwkHzqx0zVV3HwdH7XZLK5SKEu1k7TNIie067f0gn-ZSrr_uVDP5tNcTaxR8LKnuT8v111hY17Hmz56V2NOfSGhUMNHdx4_rofbWygLRdwmlt0e3xwXQc8NHT12nA=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFl2oDgUU5OnkkmHb_nJwtE3-LpKugiNBQGQTXVBvXeEwbV1RnCHKvKcZ46RJMK4z46lQuSwM1lSaJ63QKzU4amP_M6TvOJytJkfF48zgv4LIrMapa087ToEUo7_GctN3Vxj_YlxyT1mrNuGbyqdroGfS0PSHuedVXaXFpGEmmNHS4OZbwwSj4=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGGr8WNdptYjAXSGfMwA7_245JCc65cnyBOhm3ewuga8f_NPVe1JaGxKuWsQTxKfHlEajCwNXW4LruQBOJxGQY4_smr6JJ3P_6hAZjMHCAFc6CtMTvN3ceTaYSfN8PPZhKLsCCcHJ2CfOR6UXOlpSbhpTf5z2Rumo70BGA2UvEAs_ceIcqCjYj0LoE=",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGQ_5I6MXd6b3fzkR6a6xxKEUiLjY7dPmbrMMAwotacomQpstzik7mXUUw0R9u6ScMdGnOA_raYmmA2gP2TWKjRyVCn-A5WDGfXZEToE_gAO-YfZuDW1BirGgvGPlMorW0M5V6Ws1nXMR8s",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFTBbm46E0D07EPeQ6F_B8iIoPxa9X42HNoHYsTwIUvnplVMmlK25J9y3rM7npM6b3MKcwO89oN24pBlP81etuYCbRcqbgXgUbQU4hZyBeH-RUb-GXr8jk4JthFN_8cMXuWmTio"
+      ],
+      "prediction_id": "186c46d5-27d6-4e92-b882-214cee9589d8"
+    },
+    {
+      "verdict": "false",
+      "confidence": "high",
+      "explanation": "Haley Popp predicted a hung jury in the Trump trial, believing a single Trump supporter on the jury would prevent a unanimous verdict. The New York hush-money trial, which began on April 15, 2024, and concluded on May 30, 2024, did not result in a hung jury. Instead, the jury found Donald Trump guilty on all 34 felony counts after two days of deliberations. The trial's conclusion means the predicted timeframe has passed, and the outcome was a conviction, not a hung jury.",
+      "sources": [
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG1Iwt6yh5jROSYN4Ii7hfZ4H4PaGEovxAYcUvOjdt0A8Xy-Bja-WHZKXPSR6-uTcZEwJpEhg-BY05Vm_t_RqUM_0cLmGs6JyvHTXr1VIcMf0KdmKsoAI9K659-xU9uyVhtb9GdpTTCzSPS1S40kBNjLjdPjZXaAFqMyI99weYkVJ_BlQ==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHDLdOpCuTgzPo-25yQ2A6jYenNu34DFeeMpQ0rwphlLrTMmrWo36U2SSGDfNJ7XXfDl6snKnJmOD7mO-_eUmKo83nIqrXhLWB5Bqx6hiFot3g6IfyL0iJjnCi_E4mvabcOvy4lJ2LsXxvxIYzbJymsAnOIX-Wbsgp7pzMbwDYBg8F522zmP8TVyB1lo5P6BsKzHDZu_iRj7GnaWrnWEUG9z8zlnSWbCG-wfW4s2Ln31jj1Ymfbg4sZlnw==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHDvof3I5jQgyB6ImO58x44s9wgV3H0VTUcdGDSLRiiqXuFr2el4SqHRt8Mj__UmHj4ZL57GESdynLVwPOd5Y6mI2taAyY7-FZBvlOgbEH2znN7pHPwrkbS4g6Q-4apWb1faeHbn2ZSN1poyi34MAnP0nGnMhl9LyYsTa46GxBvlg==",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGkkRktvU3PxghcyBxGaz3UZk7sZ7JQXQkMO78Xq8eZvSjxc219Y7UwebefiOR6mNtbr04eyqkALpOjZ0kbOSyKI5sVUVRtA2v4ThON_kLvVQ438gUwgZMR7esq9FM7GT0nMMM9rAgcALRlyOktGvWx53F9kwebSHfl_l1Yv8bmhs6NIKHaduJNGRxz1hfWnKnMUJ4PSAV7A8-uj70SVtIO8W8ZxoCc",
+        "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFnSnJhnd8_BVdkv47D4z0CBZWWHJe0bBxae7Zhdsq-VH5NcaLvuQP-0o79_QAtVPBbDB_0-Lfr5fnREh0AsXlsY0UnZpRqeOuu_IA_h1csEN37nqNhNSEpCoDQ2yh0dwqYQnIyUZpahAP0U_ETDwPM8C5dxgheBRsfp8ri7itYP9fG9VCDZ-5ITV4uHwl4sgE5yWgocXegfiRzls_j71cn2mDKqAwztw=="
+      ],
+      "prediction_id": "a4232c3e-c329-4d0f-a2de-9e14012fa3c6"
+    }
+  ]
+}
