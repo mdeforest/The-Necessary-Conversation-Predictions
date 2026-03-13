@@ -24,6 +24,7 @@ export function usePredictions(all: MasterRecord[]) {
 
   const filtered = useMemo(() => {
     return all.filter(p => {
+      if (p.explanation?.includes('content filter')) return false
       if (filters.speaker && p.speaker !== filters.speaker) return false
       if (filters.verdict && p.verdict !== filters.verdict) return false
       if (filters.topic && p.topic !== filters.topic) return false

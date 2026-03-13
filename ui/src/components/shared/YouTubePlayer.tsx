@@ -6,6 +6,13 @@ interface YouTubePlayerProps {
   startSeconds?: number | null
 }
 
+export const TIMESTAMP_LEAD_IN_SECONDS = 5
+
+export function getPlaybackStartSeconds(startSeconds?: number | null): number | null {
+  if (startSeconds == null) return null
+  return Math.max(0, Math.floor(startSeconds) - TIMESTAMP_LEAD_IN_SECONDS)
+}
+
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
@@ -116,7 +123,7 @@ export function YouTubeInlinePlayer({ url, title, startSeconds }: YouTubePlayerP
       {open && (
         <div className="w-full rounded-lg overflow-hidden aspect-video">
           <iframe
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=1${startSeconds ? `&start=${Math.floor(startSeconds)}` : ''}`}
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1${startSeconds != null ? `&start=${getPlaybackStartSeconds(startSeconds)}` : ''}`}
             title={title}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen

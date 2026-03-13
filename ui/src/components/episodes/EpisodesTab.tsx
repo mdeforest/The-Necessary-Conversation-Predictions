@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react'
 import type { MasterRecord, Video, Verdict } from '@/types'
 import { SPEAKER_COLORS, VERDICT_COLORS, VERDICT_LABELS, KNOWN_SPEAKERS } from '@/types'
 import { VerdictBadge } from '../browse/VerdictBadge'
+import { getPlaybackStartSeconds } from '../shared/YouTubePlayer'
 
 interface EpisodesTabProps {
   videos: Video[]
@@ -11,6 +12,7 @@ interface EpisodesTabProps {
 }
 
 const VERDICTS: Verdict[] = ['true', 'false', 'pending', 'unverifiable']
+const SEEK_SCROLL_THRESHOLD_SECONDS = 3
 
 // Speaker choices for the inline editor (dev only)
 const SPEAKER_OPTIONS = [...KNOWN_SPEAKERS, 'Unknown'] as const
@@ -202,6 +204,7 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
   const playerRef = useRef<any>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const listContentRef = useRef<HTMLDivElement>(null)
 
   const [apiReady, setApiReady] = useState(() => !!(window as any).YT?.Player)
   const [showPlayer, setShowPlayer] = useState(false)
@@ -210,6 +213,8 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
   const [currentTime, setCurrentTime] = useState<number | null>(null)
   const [flashPredId, setFlashPredId] = useState<string | null>(null)
   const prevActivePredIdRef = useRef<string | null>(null)
+  const prevCurrentTimeRef = useRef<number | null>(null)
+  const [listSpacerHeight, setListSpacerHeight] = useState(0)
 
   // Dev-only: speaker overrides (prediction_id → speaker name)
   const isDev = import.meta.env.DEV
@@ -320,14 +325,77 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
     if (!activePredId) prevActivePredIdRef.current = null
   }, [activePredId])
 
+  useEffect(() => {
+    if (currentTime == null) {
+      prevCurrentTimeRef.current = null
+      return
+    }
+
+    const prevTime = prevCurrentTimeRef.current
+    prevCurrentTimeRef.current = currentTime
+
+    if (prevTime == null || !activePredId) return
+    if (Math.abs(currentTime - prevTime) < SEEK_SCROLL_THRESHOLD_SECONDS) return
+
+    scrollToPred(activePredId)
+  }, [activePredId, currentTime])
+
+  useLayoutEffect(() => {
+    const container = listRef.current
+    const content = listContentRef.current
+    if (!container || !content || typeof ResizeObserver === 'undefined') return
+
+    const updateSpacer = () => {
+      if (container.clientHeight <= 0) {
+        setListSpacerHeight(0)
+        return
+      }
+
+      const predEls = content.querySelectorAll<HTMLElement>('[data-pred-id]')
+      const lastPred = predEls[predEls.length - 1]
+      if (!lastPred) {
+        setListSpacerHeight(0)
+        return
+      }
+
+      const trailingContentHeight = content.offsetHeight - lastPred.offsetTop
+      setListSpacerHeight(Math.max(0, container.clientHeight - trailingContentHeight))
+    }
+
+    updateSpacer()
+
+    const observer = new ResizeObserver(updateSpacer)
+    observer.observe(container)
+    observer.observe(content)
+    return () => observer.disconnect()
+  }, [displayPreds.length, editingPredId, showRebuildHint])
+
   const scrollToPred = (predId: string) => {
     const container = listRef.current
     if (!container) return
     const el = container.querySelector<HTMLElement>(`[data-pred-id="${predId}"]`)
     if (!el) return
-    const containerRect = container.getBoundingClientRect()
-    const elRect = el.getBoundingClientRect()
-    container.scrollTo({ top: container.scrollTop + (elRect.top - containerRect.top), behavior: 'smooth' })
+
+    const containerCanScroll = container.scrollHeight > container.clientHeight + 1
+    if (!containerCanScroll) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
+      return
+    }
+
+    let top = 0
+    let node: HTMLElement | null = el
+    while (node && node !== container) {
+      top += node.offsetTop
+      node = node.offsetParent as HTMLElement | null
+    }
+
+    if (node !== container) {
+      const containerRect = container.getBoundingClientRect()
+      const elRect = el.getBoundingClientRect()
+      top = container.scrollTop + (elRect.top - containerRect.top)
+    }
+
+    container.scrollTo({ top, behavior: 'smooth' })
   }
 
   useEffect(() => {
@@ -335,14 +403,14 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
   }, [activePredId])
 
   const openAt = (startSeconds?: number) => {
-    pendingStartRef.current = startSeconds
+    pendingStartRef.current = getPlaybackStartSeconds(startSeconds) ?? undefined
     setShowPlayer(true)
     if (startSeconds != null) setCurrentTime(startSeconds)
   }
 
   const handleSeek = (pred: MasterRecord) => {
     if (pred.timestamp_seconds == null) return
-    const t = Math.floor(pred.timestamp_seconds)
+    const t = getPlaybackStartSeconds(pred.timestamp_seconds) ?? 0
     scrollToPred(pred.prediction_id)
     if (playerRef.current) {
       playerRef.current.seekTo(t, true)
@@ -475,65 +543,68 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
         </div>
 
         {/* ── Right: predictions timeline ── */}
-        <div ref={listRef} className="lg:col-span-2 lg:sticky lg:top-4 lg:min-h-0 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1">
+        <div ref={listRef} className="scrollbar-hidden lg:col-span-2 lg:sticky lg:top-4 lg:min-h-0 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1">
           {preds.length === 0 ? (
             <p className="text-center py-12 text-gray-400 dark:text-zinc-600 text-sm">
               No predictions extracted for this episode yet.
             </p>
           ) : (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-[#1B2A5E] uppercase tracking-wider dark:text-zinc-500">
-                  Predictions · {preds.length}
-                </p>
-                {sortedPreds.some(p => p.timestamp_seconds != null) && !showPlayer && (
-                  <p className="text-xs text-gray-400 dark:text-zinc-600">Play video to follow along</p>
-                )}
-                {sortedPreds.some(p => p.timestamp_seconds != null) && showPlayer && (
-                  <p className="text-xs text-gray-400 dark:text-zinc-600">Click timestamp to jump</p>
-                )}
-              </div>
-
-              {/* Dev-only: rebuild hint shown after saving any speaker override */}
-              {isDev && showRebuildHint && (
-                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800/40 dark:bg-amber-900/20">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                        Speaker override saved
-                      </p>
-                      <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-500">
-                        Run to persist to master:
-                      </p>
-                      <code className="mt-1 block font-mono text-xs text-amber-700 dark:text-amber-400">
-                        python pipeline/06_build_master.py
-                      </code>
-                    </div>
-                    <button
-                      onClick={() => setShowRebuildHint(false)}
-                      className="flex-shrink-0 text-xs leading-none text-amber-400 hover:text-amber-600 dark:text-amber-600 dark:hover:text-amber-400"
-                    >
-                      ✕
-                    </button>
-                  </div>
+            <>
+              <div ref={listContentRef} className="space-y-2">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold text-[#1B2A5E] uppercase tracking-wider dark:text-zinc-500">
+                    Predictions · {preds.length}
+                  </p>
+                  {sortedPreds.some(p => p.timestamp_seconds != null) && !showPlayer && (
+                    <p className="text-xs text-gray-400 dark:text-zinc-600">Play video to follow along</p>
+                  )}
+                  {sortedPreds.some(p => p.timestamp_seconds != null) && showPlayer && (
+                    <p className="text-xs text-gray-400 dark:text-zinc-600">Click timestamp to jump</p>
+                  )}
                 </div>
-              )}
 
-              {displayPreds.map(pred => (
-                <PredRow
-                  key={pred.prediction_id}
-                  pred={pred}
-                  isActive={pred.prediction_id === activePredId}
-                  isFlashing={pred.prediction_id === flashPredId}
-                  onSeek={handleSeek}
-                  isDev={isDev}
-                  isEditing={pred.prediction_id === editingPredId}
-                  onEditStart={() => setEditingPredId(pred.prediction_id)}
-                  onEditSave={speaker => handleSpeakerSave(pred, speaker)}
-                  onEditCancel={() => setEditingPredId(null)}
-                />
-              ))}
-            </div>
+                {/* Dev-only: rebuild hint shown after saving any speaker override */}
+                {isDev && showRebuildHint && (
+                  <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800/40 dark:bg-amber-900/20">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                          Speaker override saved
+                        </p>
+                        <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-500">
+                          Run to persist to master:
+                        </p>
+                        <code className="mt-1 block font-mono text-xs text-amber-700 dark:text-amber-400">
+                          python pipeline/06_build_master.py
+                        </code>
+                      </div>
+                      <button
+                        onClick={() => setShowRebuildHint(false)}
+                        className="flex-shrink-0 text-xs leading-none text-amber-400 hover:text-amber-600 dark:text-amber-600 dark:hover:text-amber-400"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {displayPreds.map(pred => (
+                  <PredRow
+                    key={pred.prediction_id}
+                    pred={pred}
+                    isActive={pred.prediction_id === activePredId}
+                    isFlashing={pred.prediction_id === flashPredId}
+                    onSeek={handleSeek}
+                    isDev={isDev}
+                    isEditing={pred.prediction_id === editingPredId}
+                    onEditStart={() => setEditingPredId(pred.prediction_id)}
+                    onEditSave={speaker => handleSpeakerSave(pred, speaker)}
+                    onEditCancel={() => setEditingPredId(null)}
+                  />
+                ))}
+              </div>
+              <div aria-hidden="true" className="hidden lg:block" style={{ height: listSpacerHeight }} />
+            </>
           )}
         </div>
       </div>

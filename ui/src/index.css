@@ -40,4 +40,14 @@
     background-color: #2D3E7A;
     border-radius: 9999px;
   }
+
+  .scrollbar-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hidden::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 }
