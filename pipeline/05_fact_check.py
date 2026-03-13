@@ -8,6 +8,7 @@ Usage:
 """
 
 import argparse
+import functools
 import json
 import os
 import re
@@ -18,6 +19,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from google import genai
+import requests
 
 
 def log(msg: str, **kwargs):
@@ -54,6 +56,7 @@ VERDICTS — use exactly one:
 - "false": The prediction clearly did not come true. There is solid evidence against it.
 - "pending": The prediction's timeframe has not yet passed, OR the outcome is expected but not yet known. Use this when the prediction is still live and could still resolve either way.
 - "unverifiable": The prediction is too vague to assess, or the topic is one where no reliable public evidence exists regardless of timeframe.
+- "partially true": Some aspects of the prediction came true, but others did not, or the outcome is mixed/ambiguous.
 
 RESEARCH STRATEGY:
 1. Search for the core claim directly.
@@ -61,6 +64,12 @@ RESEARCH STRATEGY:
 3. If ambiguous, search for the most recent news on the topic.
 4. Do at least 2 searches, up to 5 for complex multi-part claims.
 5. For predictions with a specific timeframe, check whether that window has passed.
+6. If the prediction depends on whether a named person is still in office, still a candidate, or still alive, verify that status explicitly with a current authoritative source.
+7. If a prediction says something must happen before a person leaves office or is no longer elected, and that person has already left office or lost/ended that candidacy without the event occurring, the verdict is "false", not "pending".
+
+TEMPORAL ACCURACY RULES:
+- Never assume a current officeholder from stale knowledge or from the episode context.
+- When mentioning a current president, prime minister, CEO, or other officeholder, verify it and use exact dates when they matter to the verdict.
 
 CONFIDENCE:
 - "high": Multiple reliable sources agree. The outcome is clear-cut.
@@ -91,12 +100,49 @@ JSON_FORMAT_REMINDER = (
     '"explanation": "3-5 sentences", "sources": ["url1", "url2"]}'
 )
 
+VERTEX_GROUNDING_REDIRECT_HOST = "vertexaisearch.cloud.google.com"
+
 SAFETY_SETTINGS = [
     types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
     types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
     types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
     types.SafetySetting(category="HARM_CATEGORY_CIVIC_INTEGRITY", threshold="BLOCK_NONE"),
 ]
+
+
+@functools.lru_cache(maxsize=2048)
+def _resolve_source_url(url: str) -> str:
+    url = (url or "").strip()
+    if not url:
+        return url
+
+    if url.startswith("https://www.google.com/search?") or url.startswith("http://www.google.com/search?"):
+        return ""
+
+    if VERTEX_GROUNDING_REDIRECT_HOST not in url:
+        return url
+
+    try:
+        response = requests.get(url, allow_redirects=True, timeout=(5, 10), stream=True)
+        resolved = response.url or url
+        response.close()
+        return resolved
+    except requests.RequestException:
+        return url
+
+
+def _normalize_sources(urls: list[str]) -> list[str]:
+    normalized: list[str] = []
+    seen: set[str] = set()
+
+    for raw_url in urls:
+        resolved = _resolve_source_url(raw_url)
+        if not resolved or resolved in seen:
+            continue
+        seen.add(resolved)
+        normalized.append(resolved)
+
+    return normalized
 
 
 def _build_prompt(prediction: dict, video: dict, neutral: bool = False) -> str:
@@ -206,6 +252,7 @@ def fact_check_prediction(prediction: dict, video: dict) -> dict:
         }
     result["prediction_id"] = prediction["id"]
     result["date_generated"] = date.today().isoformat()
+    result["sources"] = _normalize_sources(result.get("sources", []))
 
     # Extract source URLs from grounding metadata if available
     if not result.get("sources") and response is not None:
@@ -218,7 +265,7 @@ def fact_check_prediction(prediction: dict, video: dict) -> dict:
         except (AttributeError, IndexError, TypeError):
             pass
         if sources:
-            result["sources"] = sources
+            result["sources"] = _normalize_sources(sources)
 
     return result
 
