@@ -2,7 +2,9 @@ import { useState } from 'react'
 import type { MasterRecord } from '@/types'
 import { SPEAKER_COLORS } from '@/types'
 import { VerdictBadge } from './VerdictBadge'
+import { ConfidenceBadge } from './ConfidenceBadge'
 import { YouTubeInlinePlayer } from '@/components/shared/YouTubePlayer'
+import { formatFactCheckDate } from '@/components/shared/formatFactCheckDate'
 
 interface PredictionCardProps {
   record: MasterRecord
@@ -12,6 +14,7 @@ interface PredictionCardProps {
 export function PredictionCard({ record, onNavigateToEpisode }: PredictionCardProps) {
   const [expanded, setExpanded] = useState(false)
   const color = SPEAKER_COLORS[record.speaker] ?? '#6b7280'
+  const generatedLabel = formatFactCheckDate(record.date_generated)
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors dark:bg-[#162244] dark:border-[#1E3A60] dark:hover:border-zinc-700">
@@ -47,8 +50,14 @@ export function PredictionCard({ record, onNavigateToEpisode }: PredictionCardPr
               )}
               {record.explanation && (
                 <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-1 dark:text-zinc-500">Fact-check</p>
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <p className="text-xs text-gray-400 uppercase tracking-wider dark:text-zinc-500">Fact-check</p>
+                    <ConfidenceBadge confidence={record.confidence} />
+                  </div>
                   <p className="text-xs text-gray-600 dark:text-zinc-400">{record.explanation}</p>
+                  {generatedLabel && (
+                        <p className="text-xs italic text-gray-500 dark:text-zinc-400 pt-4">Generated {generatedLabel}</p>
+                  )}
                 </div>
               )}
               {record.timeframe && (

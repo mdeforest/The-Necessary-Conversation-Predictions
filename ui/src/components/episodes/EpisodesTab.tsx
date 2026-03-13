@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react'
-import type { MasterRecord, Video, Verdict } from '@/types'
-import { SPEAKER_COLORS, VERDICT_COLORS, VERDICT_LABELS, KNOWN_SPEAKERS } from '@/types'
+import type { MasterRecord, Video } from '@/types'
+import { SPEAKER_COLORS, VERDICT_COLORS, VERDICT_LABELS, KNOWN_SPEAKERS, VERDICTS, getAccuracyFromCounts } from '@/types'
+import { ConfidenceBadge } from '../browse/ConfidenceBadge'
 import { VerdictBadge } from '../browse/VerdictBadge'
+import { formatFactCheckDate } from '../shared/formatFactCheckDate'
 import { getPlaybackStartSeconds } from '../shared/YouTubePlayer'
+import { censorText } from '../shared/censorText'
 
 interface EpisodesTabProps {
   videos: Video[]
@@ -11,7 +14,6 @@ interface EpisodesTabProps {
   onSelectId: (id: string | null) => void
 }
 
-const VERDICTS: Verdict[] = ['true', 'false', 'pending', 'unverifiable']
 const SEEK_SCROLL_THRESHOLD_SECONDS = 3
 
 // Speaker choices for the inline editor (dev only)
@@ -76,6 +78,10 @@ function PredRow({
   const color = SPEAKER_COLORS[pred.speaker] ?? '#6b7280'
   const firstName = pred.speaker.split(' ')[0]
   const hasDetails = Boolean(pred.context || pred.explanation)
+  const generatedLabel = formatFactCheckDate(pred.date_generated)
+  const prediction = censorText(pred.prediction)
+  const context = censorText(pred.context)
+  const explanation = censorText(pred.explanation)
 
   return (
     <div
@@ -158,7 +164,7 @@ function PredRow({
         </div>
 
         {/* Prediction text */}
-        <p className="text-sm text-gray-800 dark:text-zinc-200 leading-snug">{pred.prediction}</p>
+        <p className="text-sm text-gray-800 dark:text-zinc-200 leading-snug">{prediction}</p>
 
         {/* Expandable details */}
         {hasDetails && (
@@ -166,14 +172,21 @@ function PredRow({
             {expanded && (
               <div className="mt-2.5 pt-2.5 border-t border-gray-100 dark:border-[#1E3A60] space-y-2">
                 {pred.context && (
-                  <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">{pred.context}</p>
+                  <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">{context}</p>
                 )}
                 {pred.explanation && (
                   <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5 dark:text-zinc-600">
-                      Fact-check
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">{pred.explanation}</p>
+                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                      <p className="text-xs text-gray-400 uppercase tracking-wider dark:text-zinc-600">
+                        Fact-check
+                      </p>
+                      <ConfidenceBadge confidence={pred.confidence} />
+
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">{explanation}</p>
+                    {generatedLabel && (
+                        <p className="text-xs italic text-gray-500 dark:text-zinc-400 pt-3">Generated {generatedLabel}</p>
+                    )}
                   </div>
                 )}
               </div>
@@ -197,9 +210,11 @@ interface EpisodeDetailProps {
   video: Video
   preds: MasterRecord[]
   onBack: () => void
+  onPrevious: (() => void) | null
+  onNext: (() => void) | null
 }
 
-function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
+function EpisodeDetail({ video, preds, onBack, onPrevious, onNext }: EpisodeDetailProps) {
   const playerContainerRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<any>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -221,6 +236,7 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
   const [overrides, setOverrides] = useState<Record<string, string>>({})
   const [editingPredId, setEditingPredId] = useState<string | null>(null)
   const [showRebuildHint, setShowRebuildHint] = useState(false)
+  const videoTitle = censorText(video.title)
 
   const videoId = extractVideoId(video.url)
 
@@ -462,12 +478,30 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
         .pred-flash { animation: pred-flash 0.9s ease-out; }
       `}</style>
 
-      <button
-        onClick={onBack}
-        className="text-sm text-gray-500 hover:text-gray-700 transition-colors dark:text-zinc-500 dark:hover:text-zinc-300"
-      >
-        ← All Episodes
-      </button>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <button
+          onClick={onBack}
+          className="text-sm text-gray-500 hover:text-gray-700 transition-colors dark:text-zinc-500 dark:hover:text-zinc-300"
+        >
+          ← All Episodes
+        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onPrevious ?? undefined}
+            disabled={!onPrevious}
+            className="rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-300 hover:text-gray-800 disabled:cursor-not-allowed disabled:border-gray-100 disabled:text-gray-300 dark:border-[#1E3A60] dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-200 dark:disabled:border-[#1E3A60]/60 dark:disabled:text-zinc-700"
+          >
+            ← Previous
+          </button>
+          <button
+            onClick={onNext ?? undefined}
+            disabled={!onNext}
+            className="rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-300 hover:text-gray-800 disabled:cursor-not-allowed disabled:border-gray-100 disabled:text-gray-300 dark:border-[#1E3A60] dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-200 dark:disabled:border-[#1E3A60]/60 dark:disabled:text-zinc-700"
+          >
+            Next →
+          </button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
 
@@ -482,11 +516,11 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
                 <button
                   onClick={() => openAt()}
                   className="group absolute inset-0 flex items-center justify-center"
-                  aria-label={`Play ${video.title}`}
+                  aria-label={`Play ${videoTitle}`}
                 >
                   <img
                     src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`}
-                    alt={video.title}
+                    alt={videoTitle}
                     className="w-full h-full object-cover opacity-90 group-hover:opacity-70 transition-opacity"
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -497,7 +531,7 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
                     </div>
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 px-4 py-3 bg-gradient-to-t from-black/80 to-transparent">
-                    <p className="text-white text-sm font-medium truncate">{video.title}</p>
+                    <p className="text-white text-sm font-medium truncate">{videoTitle}</p>
                   </div>
                 </button>
               )}
@@ -515,7 +549,7 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
 
           <div className="px-1">
             <h2 className="text-base font-semibold text-gray-900 dark:text-zinc-100 leading-snug">
-              {video.title}
+              {videoTitle}
             </h2>
             <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-zinc-500">
               <span>{video.published_at}</span>
@@ -628,10 +662,23 @@ export function EpisodesTab({ videos, predictions, selectedId, onSelectId }: Epi
   )
 
   if (selectedId) {
-    const video = videos.find(v => v.id === selectedId)
+    const selectedIndex = sorted.findIndex(video => video.id === selectedId)
+    const video = selectedIndex >= 0 ? sorted[selectedIndex] : null
     const preds = predsByVideo.get(selectedId) ?? []
+    const previousVideo = selectedIndex > 0 ? sorted[selectedIndex - 1] : null
+    const nextVideo = selectedIndex >= 0 && selectedIndex < sorted.length - 1 ? sorted[selectedIndex + 1] : null
+
     if (video) {
-      return <EpisodeDetail video={video} preds={preds} onBack={() => onSelectId(null)} />
+      return (
+        <EpisodeDetail
+          key={video.id}
+          video={video}
+          preds={preds}
+          onBack={() => onSelectId(null)}
+          onPrevious={previousVideo ? () => onSelectId(previousVideo.id) : null}
+          onNext={nextVideo ? () => onSelectId(nextVideo.id) : null}
+        />
+      )
     }
   }
 
@@ -643,8 +690,8 @@ export function EpisodesTab({ videos, predictions, selectedId, onSelectId }: Epi
           acc[v] = preds.filter(p => p.verdict === v).length
           return acc
         }, {})
-        const decided = counts['true'] + counts['false']
-        const accuracy = decided > 0 ? Math.round((counts['true'] / decided) * 100) : null
+        const accuracy = getAccuracyFromCounts(counts)
+        const videoTitle = censorText(video.title)
 
         return (
           <button
@@ -653,7 +700,7 @@ export function EpisodesTab({ videos, predictions, selectedId, onSelectId }: Epi
             className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-left hover:border-gray-300 transition-colors flex items-center gap-4 dark:bg-[#162244] dark:border-[#1E3A60] dark:hover:border-zinc-700"
           >
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-800 truncate dark:text-zinc-200">{video.title}</p>
+              <p className="text-sm font-medium text-gray-800 truncate dark:text-zinc-200">{videoTitle}</p>
               <p className="text-xs text-gray-500 mt-0.5 dark:text-zinc-500">{video.published_at}</p>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">

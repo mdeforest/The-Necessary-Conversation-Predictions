@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { censorText } from './censorText'
 
 interface YouTubePlayerProps {
   url: string
@@ -33,6 +34,7 @@ function extractVideoId(url: string): string | null {
 export function YouTubePlayer({ url, title }: YouTubePlayerProps) {
   const [open, setOpen] = useState(false)
   const videoId = extractVideoId(url)
+  const censoredTitle = censorText(title)
 
   if (!videoId) {
     return (
@@ -42,7 +44,7 @@ export function YouTubePlayer({ url, title }: YouTubePlayerProps) {
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors dark:text-zinc-500 dark:hover:text-zinc-300"
       >
-        ▶ {title}
+        ▶ {censoredTitle}
       </a>
     )
   }
@@ -52,11 +54,11 @@ export function YouTubePlayer({ url, title }: YouTubePlayerProps) {
       <button
         onClick={() => setOpen(true)}
         className="group relative w-full rounded-lg overflow-hidden bg-black aspect-video flex items-center justify-center"
-        aria-label={`Play ${title}`}
+        aria-label={`Play ${censoredTitle}`}
       >
         <img
           src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`}
-          alt={title}
+          alt={censoredTitle}
           className="w-full h-full object-cover opacity-80 group-hover:opacity-60 transition-opacity"
         />
         <div className="absolute inset-0 flex items-center justify-center">
@@ -67,7 +69,7 @@ export function YouTubePlayer({ url, title }: YouTubePlayerProps) {
           </div>
         </div>
         <div className="absolute bottom-0 left-0 right-0 px-2 py-1 bg-gradient-to-t from-black/70 to-transparent">
-          <p className="text-white text-xs truncate">{title}</p>
+          <p className="text-white text-xs truncate">{censoredTitle}</p>
         </div>
       </button>
     )
@@ -77,7 +79,7 @@ export function YouTubePlayer({ url, title }: YouTubePlayerProps) {
     <div className="w-full rounded-lg overflow-hidden aspect-video relative">
       <iframe
         src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-        title={title}
+        title={censoredTitle}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
         className="w-full h-full"
@@ -90,6 +92,7 @@ export function YouTubePlayer({ url, title }: YouTubePlayerProps) {
 export function YouTubeInlinePlayer({ url, title, startSeconds }: YouTubePlayerProps) {
   const [open, setOpen] = useState(false)
   const videoId = extractVideoId(url)
+  const censoredTitle = censorText(title)
 
   if (!videoId) {
     return (
@@ -99,7 +102,7 @@ export function YouTubeInlinePlayer({ url, title, startSeconds }: YouTubePlayerP
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors dark:text-zinc-500 dark:hover:text-zinc-300"
       >
-        ▶ {title}
+        ▶ {censoredTitle}
       </a>
     )
   }
@@ -117,14 +120,14 @@ export function YouTubeInlinePlayer({ url, title, startSeconds }: YouTubePlayerP
           }
         </span>
         <span className="truncate max-w-[280px]">
-          {open ? 'Close player' : startSeconds ? `${title} · ${formatTime(startSeconds)}` : title}
+          {open ? 'Close player' : startSeconds ? `${censoredTitle} · ${formatTime(startSeconds)}` : censoredTitle}
         </span>
       </button>
       {open && (
         <div className="w-full rounded-lg overflow-hidden aspect-video">
           <iframe
             src={`https://www.youtube.com/embed/${videoId}?autoplay=1${startSeconds != null ? `&start=${getPlaybackStartSeconds(startSeconds)}` : ''}`}
-            title={title}
+            title={censoredTitle}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             className="w-full h-full"
