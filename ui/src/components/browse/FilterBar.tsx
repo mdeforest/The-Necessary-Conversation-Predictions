@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import type { Filters } from '@/hooks/usePredictions'
 import { VERDICT_COLORS, VERDICT_LABELS, VERDICTS } from '@/types'
 import type { Verdict } from '@/types'
+import { getSpeakerDisplayName } from '@/components/shared/getSpeakerDisplayName'
 
 interface FilterBarProps {
   filters: Filters
@@ -38,7 +39,7 @@ export function FilterBar({ filters, onChange, speakers, topics }: FilterBarProp
         value={filters.speaker}
         onChange={v => set({ speaker: v })}
         placeholder="Speaker"
-        options={speakers.map(s => ({ value: s, label: s.split(' ')[0] }))}
+        options={speakers.map(s => ({ value: s, label: getSpeakerDisplayName(s) }))}
       />
       <FilterSelect
         value={filters.verdict}

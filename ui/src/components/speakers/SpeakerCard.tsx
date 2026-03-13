@@ -10,6 +10,7 @@ import {
 import type { MasterRecord, Verdict } from '@/types'
 import { SPEAKER_COLORS, VERDICT_COLORS, VERDICT_LABELS, VERDICTS, getAccuracyFromCounts } from '@/types'
 import { useThemeContext, useTooltipStyle } from '@/context/ThemeContext'
+import { getSpeakerDisplayName } from '@/components/shared/getSpeakerDisplayName'
 
 interface SpeakerCardProps {
   name: string
@@ -37,7 +38,7 @@ export function SpeakerCard({ name, predictions, onBrowse }: SpeakerCardProps) {
   }))
 
   const color = SPEAKER_COLORS[name] ?? '#6b7280'
-  const firstName = name.split(' ')[0]
+  const firstName = getSpeakerDisplayName(name)
 
   return (
     <div

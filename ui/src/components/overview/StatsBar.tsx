@@ -1,5 +1,6 @@
 import type { MasterRecord } from '@/types'
 import { getAccuracyFromCounts } from '@/types'
+import { getSpeakerDisplayName } from '@/components/shared/getSpeakerDisplayName'
 
 interface StatsBarProps {
   predictions: MasterRecord[]
@@ -56,7 +57,7 @@ export function StatsBar({ predictions, episodeCount }: StatsBarProps) {
     { label: 'Predictions', value: total.toLocaleString() },
     { label: 'Accuracy', value: accuracy !== null ? `${accuracy}%` : '—' },
     { label: 'Pending', value: total > 0 ? pendingCount.toLocaleString() : '—' },
-    { label: 'Top Predictor', value: topSpeaker ? topSpeaker.name.split(' ')[0] : '—' },
+    { label: 'Top Predictor', value: topSpeaker ? getSpeakerDisplayName(topSpeaker.name) : '—' },
   ]
 
   return (

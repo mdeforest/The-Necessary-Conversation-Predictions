@@ -6,6 +6,7 @@ import { VerdictBadge } from '../browse/VerdictBadge'
 import { formatFactCheckDate } from '../shared/formatFactCheckDate'
 import { getPlaybackStartSeconds } from '../shared/YouTubePlayer'
 import { censorText } from '../shared/censorText'
+import { getSpeakerDisplayName } from '../shared/getSpeakerDisplayName'
 
 interface EpisodesTabProps {
   videos: Video[]
@@ -89,7 +90,7 @@ function PredRow({
   const [expanded, setExpanded] = useState(false)
   const selectRef = useRef<HTMLSelectElement>(null)
   const color = SPEAKER_COLORS[pred.speaker] ?? '#6b7280'
-  const firstName = pred.speaker.split(' ')[0]
+  const firstName = getSpeakerDisplayName(pred.speaker)
   const hasDetails = Boolean(pred.context || pred.explanation)
   const generatedLabel = formatFactCheckDate(pred.date_generated)
   const prediction = censorText(pred.prediction)

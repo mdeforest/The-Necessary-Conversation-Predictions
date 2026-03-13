@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import type { MasterRecord } from '@/types'
 import { KNOWN_SPEAKERS, SPEAKER_COLORS, VERDICT_COLORS, getAccuracyFromCounts } from '@/types'
+import { getSpeakerDisplayName } from '@/components/shared/getSpeakerDisplayName'
 
 interface LeaderboardProps {
   predictions: MasterRecord[]
@@ -63,7 +64,7 @@ export function Leaderboard({ predictions, onSelectSpeaker }: LeaderboardProps) 
                 style={{ backgroundColor: SPEAKER_COLORS[row.name] }}
               />
               <span className="text-sm text-gray-700 flex-1 group-hover:text-gray-900 transition-colors dark:text-zinc-200 dark:group-hover:text-white">
-                {row.name.split(' ')[0]}
+                {getSpeakerDisplayName(row.name)}
               </span>
               <span className="text-xs text-gray-400 dark:text-zinc-500">{row.total} predictions</span>
               <span
