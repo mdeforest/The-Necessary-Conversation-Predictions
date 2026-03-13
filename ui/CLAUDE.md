@@ -132,6 +132,7 @@ Run `python pipeline/run_all.py` to run the full pipeline. Each stage is idempot
 - Predictions and fact-checks not yet run at scale
 - `predictions_master.json` is currently empty (`[]`)
 - **UI is complete** — Vite + React + TS + Tailwind + Recharts, all 5 tabs built
+- **Speaker editor** added to Episodes tab (dev-only, see below)
 
 ## Tech Stack Chosen
 
@@ -147,6 +148,27 @@ Run `python pipeline/run_all.py` to run the full pipeline. Each stage is idempot
 - Data loaded at startup via `fetch('/data/predictions_master.json')` + `videos.json`
 - Graceful empty state when predictions_master.json is `[]` — shows pipeline banner and episode list
 - 5 tabs: Overview · Speakers · Topics · Browse · Episodes
+
+## Speaker Overrides (Dev Tool)
+
+When running `npm run dev`, the Episodes tab has an inline speaker editor on every prediction row. Hover the speaker name to reveal a pencil icon — click it to open a dropdown with the four known speakers + Unknown.
+
+**How it works:**
+1. Override saved to `../data/prediction_speaker_overrides.json` via Vite dev middleware (`GET/POST /api/speaker-overrides`)
+2. The UI merges overrides into the displayed predictions immediately in-session (no reload needed)
+3. After setting overrides, run `python pipeline/06_build_master.py` to bake them into `predictions_master.json`
+4. `06_build_master.py` always applies overrides as the last step — they survive re-extraction (stage 04) reruns
+
+**Key file: `../data/prediction_speaker_overrides.json`**
+```json
+{
+  "some-prediction-uuid": "Bob Kultgen",
+  "another-uuid": "Mary Lou Kultgen"
+}
+```
+This file is committed to git. It is never overwritten by pipeline stages — only the dev UI can write to it.
+
+**The speaker editor is invisible in production builds** — guarded by `import.meta.env.DEV`. The Vite middleware is only registered in `configureServer`, which is dev-only.
 
 ## Conventions
 

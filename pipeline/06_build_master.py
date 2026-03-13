@@ -20,6 +20,7 @@ DATA_DIR = ROOT / "data"
 PREDICTIONS_DIR = DATA_DIR / "predictions"
 FACT_CHECKS_DIR = DATA_DIR / "fact_checks"
 OUT_PATH = ROOT / "predictions_master.json"
+SPEAKER_OVERRIDES_PATH = DATA_DIR / "prediction_speaker_overrides.json"
 
 
 def main():
@@ -61,6 +62,24 @@ def main():
                 "sources": fc.get("sources", []),
             }
             all_records.append(record)
+
+    # Apply speaker overrides — these are set via the dev UI and must never be
+    # overwritten by re-running extraction stages.
+    speaker_overrides: dict[str, str] = {}
+    if SPEAKER_OVERRIDES_PATH.exists():
+        speaker_overrides = json.loads(SPEAKER_OVERRIDES_PATH.read_text())
+        if speaker_overrides:
+            log(f"Loaded {len(speaker_overrides)} speaker override(s) from prediction_speaker_overrides.json")
+
+    override_count = 0
+    for record in all_records:
+        pid = record["prediction_id"]
+        if pid in speaker_overrides and speaker_overrides[pid]:
+            record["speaker"] = speaker_overrides[pid]
+            override_count += 1
+
+    if override_count:
+        log(f"Applied {override_count} speaker override(s)")
 
     OUT_PATH.write_text(json.dumps(all_records, indent=2))
     log(f"Wrote {len(all_records)} predictions to {OUT_PATH}")

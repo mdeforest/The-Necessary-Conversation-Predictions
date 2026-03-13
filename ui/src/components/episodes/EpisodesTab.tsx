@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import type { MasterRecord, Video, Verdict } from '@/types'
-import { SPEAKER_COLORS, VERDICT_COLORS, VERDICT_LABELS } from '@/types'
+import { SPEAKER_COLORS, VERDICT_COLORS, VERDICT_LABELS, KNOWN_SPEAKERS } from '@/types'
 import { VerdictBadge } from '../browse/VerdictBadge'
 
 interface EpisodesTabProps {
@@ -11,6 +11,9 @@ interface EpisodesTabProps {
 }
 
 const VERDICTS: Verdict[] = ['true', 'false', 'pending', 'unverifiable']
+
+// Speaker choices for the inline editor (dev only)
+const SPEAKER_OPTIONS = [...KNOWN_SPEAKERS, 'Unknown'] as const
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -47,17 +50,27 @@ function loadYTApi(): Promise<void> {
   return ytApiPromise
 }
 
-// ─── Episode-scoped prediction row (no mini player) ──────────────────────────
+// ─── Episode-scoped prediction row ───────────────────────────────────────────
 
 interface PredRowProps {
   pred: MasterRecord
   isActive: boolean
   isFlashing: boolean
   onSeek: (pred: MasterRecord) => void
+  // Dev-only speaker editing
+  isDev: boolean
+  isEditing: boolean
+  onEditStart: () => void
+  onEditSave: (speaker: string) => void
+  onEditCancel: () => void
 }
 
-function PredRow({ pred, isActive, isFlashing, onSeek }: PredRowProps) {
+function PredRow({
+  pred, isActive, isFlashing, onSeek,
+  isDev, isEditing, onEditStart, onEditSave, onEditCancel,
+}: PredRowProps) {
   const [expanded, setExpanded] = useState(false)
+  const selectRef = useRef<HTMLSelectElement>(null)
   const color = SPEAKER_COLORS[pred.speaker] ?? '#6b7280'
   const firstName = pred.speaker.split(' ')[0]
   const hasDetails = Boolean(pred.context || pred.explanation)
@@ -90,9 +103,55 @@ function PredRow({ pred, isActive, isFlashing, onSeek }: PredRowProps) {
             </span>
           )}
           <span className="w-px h-3 bg-gray-200 dark:bg-zinc-700 flex-shrink-0" />
-          <span className="text-xs font-semibold flex-shrink-0" style={{ color }}>
-            {firstName}
-          </span>
+
+          {/* Speaker: normal display or inline editor (dev only) */}
+          {isDev && isEditing ? (
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <select
+                ref={selectRef}
+                defaultValue={pred.speaker}
+                autoFocus
+                className="text-xs rounded border border-gray-300 bg-white px-1.5 py-0.5 dark:bg-zinc-800 dark:border-zinc-600 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              >
+                {SPEAKER_OPTIONS.map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => onEditSave(selectRef.current?.value ?? pred.speaker)}
+                className="text-xs font-semibold text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors"
+                title="Save"
+              >
+                ✓
+              </button>
+              <button
+                onClick={onEditCancel}
+                className="text-xs text-gray-400 hover:text-gray-600 dark:text-zinc-600 dark:hover:text-zinc-400 transition-colors"
+                title="Cancel"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <div className="group/speaker flex items-center gap-1 flex-shrink-0">
+              <span className="text-xs font-semibold" style={{ color }}>
+                {firstName}
+              </span>
+              {isDev && (
+                <button
+                  onClick={onEditStart}
+                  className="opacity-0 group-hover/speaker:opacity-100 text-gray-300 hover:text-gray-500 dark:text-zinc-700 dark:hover:text-zinc-400 transition-opacity"
+                  title="Edit speaker"
+                >
+                  {/* Pencil icon */}
+                  <svg viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                    <path d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61Zm.176 4.823L9.75 4.81l-6.286 6.287a.253.253 0 0 0-.064.108l-.558 1.953 1.953-.558a.253.253 0 0 0 .108-.064Zm1.238-3.763a.25.25 0 0 0-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 0 0 0-.354Z" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          )}
+
           <VerdictBadge verdict={pred.verdict} />
         </div>
 
@@ -144,16 +203,19 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
-  // Is the YT IFrame API loaded and ready?
   const [apiReady, setApiReady] = useState(() => !!(window as any).YT?.Player)
-  // Has the user clicked play (thumbnail → player)?
   const [showPlayer, setShowPlayer] = useState(false)
-  // Start time to pass when first creating the player
   const pendingStartRef = useRef<number | undefined>(undefined)
 
   const [currentTime, setCurrentTime] = useState<number | null>(null)
   const [flashPredId, setFlashPredId] = useState<string | null>(null)
   const prevActivePredIdRef = useRef<string | null>(null)
+
+  // Dev-only: speaker overrides (prediction_id → speaker name)
+  const isDev = import.meta.env.DEV
+  const [overrides, setOverrides] = useState<Record<string, string>>({})
+  const [editingPredId, setEditingPredId] = useState<string | null>(null)
+  const [showRebuildHint, setShowRebuildHint] = useState(false)
 
   const videoId = extractVideoId(video.url)
 
@@ -164,6 +226,15 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
     loadYTApi().then(() => { if (!cancelled) setApiReady(true) })
     return () => { cancelled = true }
   }, [apiReady])
+
+  // Load speaker overrides from local Vite dev API (dev only)
+  useEffect(() => {
+    if (!isDev) return
+    fetch('/api/speaker-overrides')
+      .then(r => r.json())
+      .then((data: Record<string, string>) => setOverrides(data))
+      .catch(() => {}) // silently ignore — endpoint only exists during vite dev
+  }, [isDev])
 
   // Destroy player and clear poll on unmount
   useEffect(() => {
@@ -186,8 +257,6 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
   }
 
   // Create the YT player once the container div is in the DOM and the API is ready.
-  // React guarantees refs are populated before effects run, so playerContainerRef.current
-  // is available here after the showPlayer re-render.
   useEffect(() => {
     if (!showPlayer || !apiReady || !playerContainerRef.current || playerRef.current || !videoId) return
     playerRef.current = new (window as any).YT.Player(playerContainerRef.current, {
@@ -195,12 +264,11 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
       playerVars: { autoplay: 1, start: Math.floor(pendingStartRef.current ?? 0), rel: 0 },
       events: {
         onReady: (e: any) => {
-          // Stretch the iframe to fill the aspect-ratio container
           const iframe: HTMLElement = e.target.getIframe()
           Object.assign(iframe.style, { position: 'absolute', inset: '0', width: '100%', height: '100%' })
         },
         onStateChange: (e: any) => {
-          if (e.data === 1) startPolling()  // YT.PlayerState.PLAYING
+          if (e.data === 1) startPolling()
           else stopPolling()
         },
       },
@@ -220,7 +288,17 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
     [preds],
   )
 
-  // Active prediction: most recent whose timestamp ≤ currentTime, but only within 60s of it
+  // Merge in-session speaker overrides for display (overrides win over master data)
+  const displayPreds = useMemo(
+    () => sortedPreds.map(p =>
+      overrides[p.prediction_id] !== undefined
+        ? { ...p, speaker: overrides[p.prediction_id] }
+        : p,
+    ),
+    [sortedPreds, overrides],
+  )
+
+  // Active prediction: most recent whose timestamp ≤ currentTime and within 60s
   const activePredId = useMemo(() => {
     if (currentTime == null) return null
     const withTime = sortedPreds.filter(p => p.timestamp_seconds != null)
@@ -242,7 +320,6 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
     if (!activePredId) prevActivePredIdRef.current = null
   }, [activePredId])
 
-  // Scroll the predictions list so a given row is at the top of the sidebar
   const scrollToPred = (predId: string) => {
     const container = listRef.current
     if (!container) return
@@ -255,17 +332,14 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
 
   useEffect(() => {
     if (activePredId) scrollToPred(activePredId)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePredId])
 
-  // Open the player (thumbnail → iframe), optionally at a given timestamp
   const openAt = (startSeconds?: number) => {
     pendingStartRef.current = startSeconds
     setShowPlayer(true)
-    if (startSeconds != null) setCurrentTime(startSeconds) // optimistic highlight
+    if (startSeconds != null) setCurrentTime(startSeconds)
   }
 
-  // Seek an already-running player, or open it at the given timestamp
   const handleSeek = (pred: MasterRecord) => {
     if (pred.timestamp_seconds == null) return
     const t = Math.floor(pred.timestamp_seconds)
@@ -273,9 +347,25 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
     if (playerRef.current) {
       playerRef.current.seekTo(t, true)
       playerRef.current.playVideo()
-      setCurrentTime(pred.timestamp_seconds) // optimistic
+      setCurrentTime(pred.timestamp_seconds)
     } else {
       openAt(pred.timestamp_seconds)
+    }
+  }
+
+  // Save a speaker override — writes to data/prediction_speaker_overrides.json via Vite middleware
+  const handleSpeakerSave = async (predId: string, speaker: string) => {
+    setEditingPredId(null)
+    try {
+      await fetch('/api/speaker-overrides', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prediction_id: predId, speaker }),
+      })
+      setOverrides(prev => ({ ...prev, [predId]: speaker }))
+      setShowRebuildHint(true)
+    } catch {
+      // Silently ignore — only available during vite dev
     }
   }
 
@@ -313,7 +403,6 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
           {videoId ? (
             <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-md bg-black">
               {showPlayer ? (
-                /* YT API replaces this div with a full-size iframe via onReady */
                 <div ref={playerContainerRef} className="absolute inset-0" />
               ) : (
                 <button
@@ -398,13 +487,44 @@ function EpisodeDetail({ video, preds, onBack }: EpisodeDetailProps) {
                   <p className="text-xs text-gray-400 dark:text-zinc-600">Click timestamp to jump</p>
                 )}
               </div>
-              {sortedPreds.map(pred => (
+
+              {/* Dev-only: rebuild hint shown after saving any speaker override */}
+              {isDev && showRebuildHint && (
+                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800/40 dark:bg-amber-900/20">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                        Speaker override saved
+                      </p>
+                      <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-500">
+                        Run to persist to master:
+                      </p>
+                      <code className="mt-1 block font-mono text-xs text-amber-700 dark:text-amber-400">
+                        python pipeline/06_build_master.py
+                      </code>
+                    </div>
+                    <button
+                      onClick={() => setShowRebuildHint(false)}
+                      className="flex-shrink-0 text-xs leading-none text-amber-400 hover:text-amber-600 dark:text-amber-600 dark:hover:text-amber-400"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {displayPreds.map(pred => (
                 <PredRow
                   key={pred.prediction_id}
                   pred={pred}
                   isActive={pred.prediction_id === activePredId}
                   isFlashing={pred.prediction_id === flashPredId}
                   onSeek={handleSeek}
+                  isDev={isDev}
+                  isEditing={pred.prediction_id === editingPredId}
+                  onEditStart={() => setEditingPredId(pred.prediction_id)}
+                  onEditSave={speaker => handleSpeakerSave(pred.prediction_id, speaker)}
+                  onEditCancel={() => setEditingPredId(null)}
                 />
               ))}
             </div>
