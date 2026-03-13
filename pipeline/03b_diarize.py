@@ -62,7 +62,7 @@ CORRECTIONS_PATH = DATA_DIR / "speaker_corrections.json"
 load_dotenv(ROOT / ".env")
 
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
-SIMILARITY_THRESHOLD = 0.65  # cosine similarity — tune if misidentifying speakers
+SIMILARITY_THRESHOLD = 0.64  # cosine similarity — tune if misidentifying speakers
 
 
 def load_diarization_pipeline():
