@@ -1,10 +1,13 @@
 """
-Stage 5: Fact-check predictions using Gemini 2.0 Flash + Google Search grounding.
+Stage 5: Fact-check predictions using Gemini 2.5 Flash + Google Search grounding.
 Gemini searches the web automatically via its built-in Google Search tool.
-Skips already fact-checked predictions. Processes in batches.
+By default this fills only missing fact-checks; refresh mode can revisit stale items.
+Processes in batches.
 
 Usage:
   python pipeline/05_fact_check.py [--batch-size N] [--video-id ID] [--prediction-id ID]
+                                    [--refresh-scope pending-first|stale-all|manual]
+                                    [--stale-days N]
 """
 
 import argparse
@@ -109,6 +112,15 @@ SAFETY_SETTINGS = [
     types.SafetySetting(category="HARM_CATEGORY_CIVIC_INTEGRITY", threshold="BLOCK_NONE"),
 ]
 
+REFRESH_SCOPE_PENDING_FIRST = "pending-first"
+REFRESH_SCOPE_STALE_ALL = "stale-all"
+REFRESH_SCOPE_MANUAL = "manual"
+REFRESH_SCOPES = [
+    REFRESH_SCOPE_PENDING_FIRST,
+    REFRESH_SCOPE_STALE_ALL,
+    REFRESH_SCOPE_MANUAL,
+]
+
 
 @functools.lru_cache(maxsize=2048)
 def _resolve_source_url(url: str) -> str:
@@ -143,6 +155,59 @@ def _normalize_sources(urls: list[str]) -> list[str]:
         normalized.append(resolved)
 
     return normalized
+
+
+def _parse_iso_date(value: str | None) -> date | None:
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def _is_stale(fact_check: dict, stale_days: int) -> bool:
+    generated = _parse_iso_date(fact_check.get("date_generated"))
+    if generated is None:
+        return True
+    return (date.today() - generated).days >= stale_days
+
+
+def _is_refresh_candidate(fact_check: dict, scope: str, stale_days: int) -> bool:
+    if scope == REFRESH_SCOPE_STALE_ALL:
+        return _is_stale(fact_check, stale_days)
+
+    if scope == REFRESH_SCOPE_PENDING_FIRST:
+        verdict = fact_check.get("verdict")
+        confidence = fact_check.get("confidence")
+        return _is_stale(fact_check, stale_days) and (
+            verdict in {"pending", "unverifiable"} or confidence == "low"
+        )
+
+    return False
+
+
+def _merge_fact_checks(existing: list[dict], new_items: list[dict]) -> list[dict]:
+    """Replace by prediction_id while preserving existing order when possible."""
+    merged: dict[str, dict] = {}
+    order: list[str] = []
+
+    for item in existing:
+        pid = item.get("prediction_id")
+        if not pid:
+            continue
+        merged[pid] = item
+        order.append(pid)
+
+    for item in new_items:
+        pid = item.get("prediction_id")
+        if not pid:
+            continue
+        merged[pid] = item
+        if pid not in order:
+            order.append(pid)
+
+    return [merged[pid] for pid in order]
 
 
 def _build_prompt(prediction: dict, video: dict, neutral: bool = False) -> str:
@@ -275,7 +340,26 @@ def main():
     parser.add_argument("--batch-size", type=int, default=int(os.getenv("PREDICTION_BATCH_SIZE", 10)))
     parser.add_argument("--video-id", help="Only fact-check predictions from a specific video")
     parser.add_argument("--prediction-id", help="Fact-check a single specific prediction ID")
+    parser.add_argument(
+        "--refresh-scope",
+        choices=REFRESH_SCOPES,
+        help="Refresh existing fact-checks instead of only filling missing ones. "
+             "'pending-first' refreshes stale pending/unverifiable/low-confidence items; "
+             "'stale-all' refreshes any stale item; "
+             "'manual' refreshes only explicitly targeted video/prediction selections.",
+    )
+    parser.add_argument(
+        "--stale-days",
+        type=int,
+        default=30,
+        help="Minimum age in days before an existing fact-check is eligible for refresh "
+             "(default: 30).",
+    )
     args = parser.parse_args()
+
+    if args.refresh_scope == REFRESH_SCOPE_MANUAL and not (args.video_id or args.prediction_id):
+        log("--refresh-scope manual requires --video-id or --prediction-id", file=sys.stderr)
+        sys.exit(1)
 
     FACT_CHECKS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -292,11 +376,11 @@ def main():
         pred_files = sorted(PREDICTIONS_DIR.glob("*.json"))
 
     # Load existing fact-checks to know what's done
-    done_ids: set[str] = set()
+    existing_by_prediction_id: dict[str, dict] = {}
     for fc_file in FACT_CHECKS_DIR.glob("*.json"):
         fc_data = json.loads(fc_file.read_text())
         for fc in fc_data.get("fact_checks", []):
-            done_ids.add(fc["prediction_id"])
+            existing_by_prediction_id[fc["prediction_id"]] = fc
 
     # Build work queue
     queue: list[tuple[dict, dict]] = []
@@ -309,7 +393,18 @@ def main():
         for pred in data.get("predictions", []):
             if args.prediction_id and pred["id"] != args.prediction_id:
                 continue
-            if pred["id"] not in done_ids:
+            existing = existing_by_prediction_id.get(pred["id"])
+
+            if not args.refresh_scope:
+                if existing is None:
+                    queue.append((pred, video))
+                continue
+
+            if args.refresh_scope == REFRESH_SCOPE_MANUAL:
+                queue.append((pred, video))
+                continue
+
+            if existing is None or _is_refresh_candidate(existing, args.refresh_scope, args.stale_days):
                 queue.append((pred, video))
 
     if not queue:
@@ -318,8 +413,10 @@ def main():
 
     batch = queue[: args.batch_size]
     remaining = len(queue) - len(batch)
+    mode = "refresh" if args.refresh_scope else "initial"
     log(f"Fact-checking {len(batch)} predictions ({remaining} remaining after this batch)")
-    log(f"Using Gemini 2.0 Flash + Google Search grounding\n")
+    log(f"Mode: {mode}" + (f" [{args.refresh_scope}, stale_days={args.stale_days}]" if args.refresh_scope else ""))
+    log(f"Using Gemini 2.5 Flash + Google Search grounding\n")
 
     results_by_video: dict[str, list[dict]] = {}
 
@@ -344,7 +441,7 @@ def main():
     for video_id, new_fcs in results_by_video.items():
         fc_path = FACT_CHECKS_DIR / f"{video_id}.json"
         existing = json.loads(fc_path.read_text()) if fc_path.exists() else {"video_id": video_id, "fact_checks": []}
-        existing["fact_checks"].extend(new_fcs)
+        existing["fact_checks"] = _merge_fact_checks(existing.get("fact_checks", []), new_fcs)
         fc_path.write_text(json.dumps(existing, indent=2))
 
     total = sum(len(v) for v in results_by_video.values())

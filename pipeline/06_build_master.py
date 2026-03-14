@@ -7,6 +7,7 @@ Usage:
 """
 
 import json
+import shutil
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -20,11 +21,15 @@ DATA_DIR = ROOT / "data"
 PREDICTIONS_DIR = DATA_DIR / "predictions"
 FACT_CHECKS_DIR = DATA_DIR / "fact_checks"
 OUT_PATH = ROOT / "predictions_master.json"
+EXPORTS_DIR = ROOT / "exports"
+EXPORT_MASTER_PATH = EXPORTS_DIR / "predictions_master.json"
+EXPORT_VIDEOS_PATH = EXPORTS_DIR / "videos.json"
 SPEAKER_OVERRIDES_PATH = DATA_DIR / "prediction_speaker_overrides.json"
 
 
 def main():
     videos_path = DATA_DIR / "videos.json"
+    EXPORTS_DIR.mkdir(parents=True, exist_ok=True)
     videos = {}
     if videos_path.exists():
         for v in json.loads(videos_path.read_text()):
@@ -84,6 +89,12 @@ def main():
 
     OUT_PATH.write_text(json.dumps(all_records, indent=2))
     log(f"Wrote {len(all_records)} predictions to {OUT_PATH}")
+    shutil.copyfile(OUT_PATH, EXPORT_MASTER_PATH)
+    log(f"Exported predictions master to {EXPORT_MASTER_PATH}")
+
+    if videos_path.exists():
+        shutil.copyfile(videos_path, EXPORT_VIDEOS_PATH)
+        log(f"Exported videos metadata to {EXPORT_VIDEOS_PATH}")
 
     # Summary stats
     fact_checked = [r for r in all_records if r["verdict"]]

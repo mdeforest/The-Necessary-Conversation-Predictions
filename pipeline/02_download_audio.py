@@ -8,6 +8,7 @@ Usage:
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime
@@ -26,7 +27,11 @@ AUDIO_DIR = DATA_DIR / "audio"
 load_dotenv(ROOT / ".env")
 
 
-def download_audio(video: dict, cookies_from_browser: str | None = None) -> bool:
+def download_audio(
+    video: dict,
+    cookies_from_browser: str | None = None,
+    cookies_file: str | None = None,
+) -> bool:
     video_id = video["id"]
     out_path = AUDIO_DIR / f"{video_id}.mp3"
 
@@ -46,6 +51,8 @@ def download_audio(video: dict, cookies_from_browser: str | None = None) -> bool
     ]
     if cookies_from_browser:
         cmd += ["--cookies-from-browser", cookies_from_browser]
+    if cookies_file:
+        cmd += ["--cookies", cookies_file]
     cmd.append(url)
     log(f"  [download] {video_id} — {video['title'][:60]} ({duration_min})")
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -67,7 +74,15 @@ def main():
     parser.add_argument("--cookies-from-browser", metavar="BROWSER",
                         help="Pass cookies from browser to yt-dlp (e.g. chrome, safari, firefox). "
                              "Required when YouTube demands authentication.")
+    parser.add_argument("--cookies-file",
+                        default=os.getenv("YTDLP_COOKIES_FILE"),
+                        help="Path to a Netscape-format cookies.txt file for yt-dlp. "
+                             "Useful for cloud jobs where --cookies-from-browser is unavailable.")
     args = parser.parse_args()
+
+    if args.cookies_from_browser and args.cookies_file:
+        log("Use either --cookies-from-browser or --cookies-file, not both.", file=sys.stderr)
+        sys.exit(1)
 
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -93,7 +108,11 @@ def main():
     ok = fail = 0
     for i, video in enumerate(batch, 1):
         log(f"[{i}/{len(batch)}] {video.get('published_at', '?')} — {video['title'][:70]}")
-        success = download_audio(video, cookies_from_browser=args.cookies_from_browser)
+        success = download_audio(
+            video,
+            cookies_from_browser=args.cookies_from_browser,
+            cookies_file=args.cookies_file,
+        )
         if success:
             ok += 1
         else:

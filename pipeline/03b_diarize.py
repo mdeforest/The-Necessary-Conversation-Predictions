@@ -45,12 +45,16 @@ from pathlib import Path
 
 import numpy as np
 from dotenv import load_dotenv
+import requests
 
 
 def log(msg: str, **kwargs):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", **kwargs)
 
 ROOT = Path(__file__).parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 DATA_DIR = ROOT / "data"
 AUDIO_DIR = DATA_DIR / "audio"
 TRANSCRIPTS_DIR = DATA_DIR / "transcripts"
@@ -59,13 +63,24 @@ PROFILES_PATH = DATA_DIR / "speaker_profiles.json"
 EMBEDDINGS_PATH = DATA_DIR / "speaker_embeddings.json"
 CORRECTIONS_PATH = DATA_DIR / "speaker_corrections.json"
 
+from infra.r2_sync import get_bucket_name, get_r2_client
+
 load_dotenv(ROOT / ".env")
 
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
+DIARIZATION_PROVIDER = os.environ.get("DIARIZATION_PROVIDER", "local").strip().lower()
+PYANNOTE_API_KEY = os.environ.get("PYANNOTE_API_KEY", "")
+PYANNOTE_API_URL = os.environ.get("PYANNOTE_API_URL", "https://api.pyannote.ai/v1").rstrip("/")
+PYANNOTE_API_MODEL = os.environ.get("PYANNOTE_API_MODEL", "precision-2")
+PYANNOTE_API_POLL_INTERVAL = int(os.environ.get("PYANNOTE_API_POLL_INTERVAL_SECONDS", "15"))
+PYANNOTE_API_TIMEOUT = int(os.environ.get("PYANNOTE_API_TIMEOUT_SECONDS", "7200"))
+PYANNOTE_PRESIGN_EXPIRY = int(os.environ.get("PYANNOTE_PRESIGN_EXPIRY_SECONDS", "3600"))
 SIMILARITY_THRESHOLD = 0.64  # cosine similarity — tune if misidentifying speakers
+MATCH_MARGIN = float(os.environ.get("SPEAKER_MATCH_MARGIN", "0.02"))
+MAX_VOICEPRINT_SAMPLES = int(os.environ.get("MAX_VOICEPRINT_SAMPLES", "8"))
 
 
-def load_diarization_pipeline():
+def load_local_diarization_pipeline():
     from pyannote.audio import Pipeline
     if not HF_TOKEN:
         log("ERROR: HF_TOKEN not set in .env. Get a token at huggingface.co and accept the pyannote model license.", file=sys.stderr)
@@ -76,6 +91,15 @@ def load_diarization_pipeline():
         token=HF_TOKEN,
     )
     return pipeline
+
+
+def load_diarization_backend():
+    if DIARIZATION_PROVIDER == "pyannote_api":
+        if not PYANNOTE_API_KEY:
+            log("ERROR: PYANNOTE_API_KEY not set in .env for hosted diarization.", file=sys.stderr)
+            sys.exit(1)
+        return {"provider": "pyannote_api"}
+    return load_local_diarization_pipeline()
 
 
 def load_embedding_model():
@@ -128,6 +152,82 @@ def diarize_audio(audio_path: Path, pipeline, max_duration_sec: float | None = N
     unique_speakers = len({s["speaker"] for s in segments})
     log(f"    Diarization complete: {len(segments)} turns, {unique_speakers} unique speakers")
     return segments
+
+
+def _audio_r2_key(video_id: str) -> str:
+    return f"artifacts/audio/{video_id}.mp3"
+
+
+def _build_presigned_audio_url(video_id: str) -> str:
+    client = get_r2_client()
+    return client.generate_presigned_url(
+        "get_object",
+        Params={
+            "Bucket": get_bucket_name(),
+            "Key": _audio_r2_key(video_id),
+        },
+        ExpiresIn=PYANNOTE_PRESIGN_EXPIRY,
+    )
+
+
+def diarize_audio_via_api(video_id: str) -> list[dict]:
+    audio_url = _build_presigned_audio_url(video_id)
+    headers = {
+        "Authorization": f"Bearer {PYANNOTE_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "url": audio_url,
+        "model": PYANNOTE_API_MODEL,
+        "exclusive": True,
+    }
+
+    log(f"    Submitting hosted diarization job ({PYANNOTE_API_MODEL}) ...")
+    submit = requests.post(f"{PYANNOTE_API_URL}/diarize", headers=headers, json=payload, timeout=60)
+    submit.raise_for_status()
+    created = submit.json()
+    job_id = created.get("jobId")
+    if not job_id:
+        raise RuntimeError(f"pyannote API response missing jobId: {created}")
+
+    started = time.time()
+    while True:
+        status_response = requests.get(
+            f"{PYANNOTE_API_URL}/jobs/{job_id}",
+            headers={"Authorization": f"Bearer {PYANNOTE_API_KEY}"},
+            timeout=60,
+        )
+        status_response.raise_for_status()
+        job = status_response.json()
+        status = job.get("status", "unknown")
+
+        if status == "succeeded":
+            output = job.get("output") or {}
+            raw_segments = output.get("exclusiveDiarization") or output.get("diarization") or []
+            segments = [
+                {
+                    "start": round(seg["start"], 3),
+                    "end": round(seg["end"], 3),
+                    "speaker": seg["speaker"],
+                }
+                for seg in raw_segments
+                if "start" in seg and "end" in seg and "speaker" in seg
+            ]
+            unique_speakers = len({s["speaker"] for s in segments})
+            log(f"    Hosted diarization complete: {len(segments)} turns, {unique_speakers} unique speakers")
+            return segments
+
+        if status in {"failed", "canceled"}:
+            output = job.get("output") or {}
+            error = output.get("error") or job.get("warning") or status_response.text
+            raise RuntimeError(f"pyannote job {job_id} ended with status={status}: {error}")
+
+        elapsed = time.time() - started
+        if elapsed > PYANNOTE_API_TIMEOUT:
+            raise TimeoutError(f"pyannote job {job_id} exceeded timeout ({PYANNOTE_API_TIMEOUT}s)")
+
+        log(f"    Hosted diarization status: {status} ({elapsed:.0f}s elapsed)")
+        time.sleep(PYANNOTE_API_POLL_INTERVAL)
 
 
 def merge_with_transcript(whisper_segments: list[dict], diarization: list[dict]) -> list[dict]:
@@ -209,14 +309,106 @@ def cosine_similarity(a: list[float], b: list[float]) -> float:
     return float(np.dot(a, b) / (norm_a * norm_b))
 
 
-def load_reference_embeddings() -> dict[str, list[float]]:
-    """Returns {speaker_name: embedding_vector}."""
+def average_embeddings(samples: list[list[float]]) -> list[float]:
+    if not samples:
+        return []
+    return np.mean(np.array(samples), axis=0).tolist()
+
+
+def _normalize_voiceprints(raw: dict) -> dict[str, dict[str, list[list[float]] | list[float]]]:
+    normalized: dict[str, dict[str, list[list[float]] | list[float]]] = {}
+
+    for speaker, value in raw.items():
+        samples: list[list[float]] = []
+
+        if isinstance(value, list):
+            if value and isinstance(value[0], list):
+                samples = [sample for sample in value if isinstance(sample, list)]
+            elif value and isinstance(value[0], (int, float)):
+                samples = [value]
+        elif isinstance(value, dict):
+            raw_samples = value.get("samples")
+            if isinstance(raw_samples, list):
+                if raw_samples and isinstance(raw_samples[0], list):
+                    samples = [sample for sample in raw_samples if isinstance(sample, list)]
+                elif raw_samples and isinstance(raw_samples[0], (int, float)):
+                    samples = [raw_samples]
+            elif isinstance(value.get("embedding"), list):
+                samples = [value["embedding"]]
+
+        if not samples:
+            continue
+
+        samples = samples[-MAX_VOICEPRINT_SAMPLES:]
+        normalized[speaker] = {
+            "samples": samples,
+            "centroid": average_embeddings(samples),
+        }
+
+    return normalized
+
+
+def serialize_voiceprints(voiceprints: dict[str, dict[str, list[list[float]] | list[float]]]) -> dict:
+    return {
+        speaker: {
+            "samples": data["samples"],
+            "centroid": data["centroid"],
+        }
+        for speaker, data in voiceprints.items()
+    }
+
+
+def add_voiceprint_sample(
+    voiceprints: dict[str, dict[str, list[list[float]] | list[float]]],
+    speaker: str,
+    embedding: list[float],
+) -> None:
+    current = voiceprints.get(speaker)
+    samples = list(current["samples"]) if current else []
+    samples.append(embedding)
+    samples = samples[-MAX_VOICEPRINT_SAMPLES:]
+    voiceprints[speaker] = {
+        "samples": samples,
+        "centroid": average_embeddings(samples),
+    }
+
+
+def load_reference_embeddings() -> dict[str, dict[str, list[list[float]] | list[float]]]:
+    """Returns {speaker_name: {samples: [...], centroid: [...]}}."""
     if not EMBEDDINGS_PATH.exists():
         return {}
-    return json.loads(EMBEDDINGS_PATH.read_text())
+    return _normalize_voiceprints(json.loads(EMBEDDINGS_PATH.read_text()))
 
 
-def match_speakers(diarization: list[dict], embeddings_by_name: dict, audio_path: Path, embedding_model, threshold: float = SIMILARITY_THRESHOLD) -> dict[str, str]:
+def top_segments_by_speaker(diarization: list[dict], max_segments: int = 3, min_duration: float = 3.0) -> dict[str, list[dict]]:
+    grouped: dict[str, list[dict]] = {}
+    for seg in diarization:
+        dur = seg["end"] - seg["start"]
+        if dur < min_duration:
+            continue
+        grouped.setdefault(seg["speaker"], []).append(seg)
+
+    result: dict[str, list[dict]] = {}
+    for speaker, segments in grouped.items():
+        ranked = sorted(segments, key=lambda seg: (seg["end"] - seg["start"]), reverse=True)
+        result[speaker] = ranked[:max_segments]
+    return result
+
+
+def voiceprint_similarity(candidate_emb: list[float], reference: dict[str, list[list[float]] | list[float]]) -> float:
+    sample_scores = [cosine_similarity(candidate_emb, sample) for sample in reference["samples"]]
+    centroid = reference.get("centroid") or []
+    centroid_score = cosine_similarity(candidate_emb, centroid) if centroid else 0.0
+    return max(sample_scores + [centroid_score]) if sample_scores or centroid else 0.0
+
+
+def match_speakers(
+    diarization: list[dict],
+    embeddings_by_name: dict[str, dict[str, list[list[float]] | list[float]]],
+    audio_path: Path,
+    embedding_model,
+    threshold: float = SIMILARITY_THRESHOLD,
+) -> dict[str, str]:
     """
     For each anonymous speaker label in this episode, compute its embedding
     and match to the closest known speaker name.
@@ -225,48 +417,48 @@ def match_speakers(diarization: list[dict], embeddings_by_name: dict, audio_path
     if not embeddings_by_name:
         return {}
 
-    # Get unique anonymous speakers from this episode
-    speakers = list({seg["speaker"] for seg in diarization})
-
-    # Find the longest segment per speaker for embedding computation
-    best_seg: dict[str, dict] = {}
-    for seg in diarization:
-        spk = seg["speaker"]
-        dur = seg["end"] - seg["start"]
-        if spk not in best_seg or dur > (best_seg[spk]["end"] - best_seg[spk]["start"]):
-            best_seg[spk] = seg
+    candidate_segments = top_segments_by_speaker(diarization)
 
     from pydub import AudioSegment
     audio = AudioSegment.from_mp3(str(audio_path))
     CLIPS_DIR.mkdir(parents=True, exist_ok=True)
 
-    log(f"    Computing embeddings for {len(best_seg)} anonymous speakers ...")
+    log(f"    Computing voiceprints for {len(candidate_segments)} anonymous speakers ...")
     mapping = {}
-    for spk, seg in best_seg.items():
-        seg_dur = seg["end"] - seg["start"]
-        log(f"    [{spk}] best segment: {seg['start']:.1f}s–{seg['end']:.1f}s ({seg_dur:.1f}s)")
-        # Extract a temp clip for embedding
-        tmp_path = CLIPS_DIR / f"_tmp_{spk}.mp3"
-        clip = audio[int(seg["start"] * 1000): int(seg["end"] * 1000)]
-        clip.export(str(tmp_path), format="mp3")
+    for spk, segments in candidate_segments.items():
+        log(f"    [{spk}] using {len(segments)} segment(s) for matching")
+        candidate_embeddings: list[list[float]] = []
 
-        emb = compute_embedding(str(tmp_path), embedding_model)
-        tmp_path.unlink(missing_ok=True)
+        for idx, seg in enumerate(segments, 1):
+            seg_dur = seg["end"] - seg["start"]
+            log(f"      segment {idx}: {seg['start']:.1f}s–{seg['end']:.1f}s ({seg_dur:.1f}s)")
+            tmp_path = CLIPS_DIR / f"_tmp_{spk}_{idx}.mp3"
+            clip = audio[int(seg["start"] * 1000): int(seg["end"] * 1000)]
+            clip.export(str(tmp_path), format="mp3")
+            candidate_embeddings.append(compute_embedding(str(tmp_path), embedding_model))
+            tmp_path.unlink(missing_ok=True)
 
-        # Find closest reference speaker
-        best_name, best_score = None, -1.0
-        for name, ref_emb in embeddings_by_name.items():
-            score = cosine_similarity(emb, ref_emb)
-            if score > best_score:
-                best_score = score
-                best_name = name
+        speaker_scores: list[tuple[str, float]] = []
+        for name, reference in embeddings_by_name.items():
+            scores = [voiceprint_similarity(candidate_emb, reference) for candidate_emb in candidate_embeddings]
+            scores.sort(reverse=True)
+            score = sum(scores[:2]) / min(len(scores), 2) if scores else 0.0
+            speaker_scores.append((name, score))
 
-        if best_score >= threshold:
+        speaker_scores.sort(key=lambda item: item[1], reverse=True)
+        best_name, best_score = speaker_scores[0]
+        second_best = speaker_scores[1][1] if len(speaker_scores) > 1 else -1.0
+        margin = best_score - second_best
+
+        if best_score >= threshold and margin >= MATCH_MARGIN:
             mapping[spk] = best_name
-            log(f"    {spk} → {best_name} (similarity: {best_score:.2f})")
+            log(f"    {spk} → {best_name} (score: {best_score:.2f}, margin: {margin:.2f})")
         else:
             mapping[spk] = spk  # keep anonymous label if no confident match
-            log(f"    {spk} → (unmatched, best score {best_score:.2f}, threshold {threshold})")
+            log(
+                f"    {spk} → (unmatched, best={best_name}:{best_score:.2f}, "
+                f"margin={margin:.2f}, threshold={threshold}, min_margin={MATCH_MARGIN})"
+            )
 
     return mapping
 
@@ -298,7 +490,7 @@ def enroll(video_id: str | None, save_embeddings: bool, enroll_minutes: float = 
     if save_embeddings and existing_clips and PROFILES_PATH.exists():
         log(f"  Clips already exist ({len(existing_clips)} found) — skipping diarization")
     else:
-        pipeline = load_diarization_pipeline()
+        pipeline = load_local_diarization_pipeline()
         log(f"\nDiarizing {audio_path.name} ...")
         t0 = time.time()
         diarization = diarize_audio(audio_path, pipeline, max_duration_sec=enroll_minutes * 60)
@@ -324,7 +516,7 @@ def enroll(video_id: str | None, save_embeddings: bool, enroll_minutes: float = 
 
         log("\nComputing voice embeddings ...")
         embedding_model = load_embedding_model()
-        embeddings_by_name = {}
+        voiceprints = load_reference_embeddings()
         for spk, name in profiles.items():
             if not name:
                 continue
@@ -333,10 +525,11 @@ def enroll(video_id: str | None, save_embeddings: bool, enroll_minutes: float = 
                 log(f"  [skip] clip not found for {spk}: {clip_path}", file=sys.stderr)
                 continue
             emb = compute_embedding(str(clip_path), embedding_model)
-            embeddings_by_name[name] = emb
-            log(f"  Embedded {name} ({len(emb)}-dim)")
+            add_voiceprint_sample(voiceprints, name, emb)
+            sample_count = len(voiceprints[name]["samples"])
+            log(f"  Embedded {name} ({len(emb)}-dim, {sample_count} sample(s))")
 
-        EMBEDDINGS_PATH.write_text(json.dumps(embeddings_by_name, indent=2))
+        EMBEDDINGS_PATH.write_text(json.dumps(serialize_voiceprints(voiceprints), indent=2))
         log(f"\nSaved embeddings to {EMBEDDINGS_PATH}")
         log("You can now run diarization on all episodes without --enroll.")
 
@@ -362,7 +555,10 @@ def diarize_video(video_id: str, pipeline, embedding_model, ref_embeddings: dict
 
     log(f"  [diarize] {video_id} ...")
     t0 = time.time()
-    diarization = diarize_audio(audio_path, pipeline)
+    if isinstance(pipeline, dict) and pipeline.get("provider") == "pyannote_api":
+        diarization = diarize_audio_via_api(video_id)
+    else:
+        diarization = diarize_audio(audio_path, pipeline)
     n_speakers = len({s["speaker"] for s in diarization})
     log(f"    Found {n_speakers} speakers in {time.time() - t0:.0f}s")
 
@@ -474,17 +670,11 @@ def update_embeddings_from_corrections():
             new_emb = compute_embedding(str(tmp_path), embedding_model)
             tmp_path.unlink(missing_ok=True)
 
-            if name in ref_embeddings:
-                # Average new embedding with existing (direction is what matters for cosine similarity)
-                existing = np.array(ref_embeddings[name])
-                averaged = ((existing + np.array(new_emb)) / 2).tolist()
-                ref_embeddings[name] = averaged
-                log(f"    Updated embedding for {name} (averaged with existing)")
-            else:
-                ref_embeddings[name] = new_emb
-                log(f"    Added new embedding for {name}")
+            add_voiceprint_sample(ref_embeddings, name, new_emb)
+            sample_count = len(ref_embeddings[name]["samples"])
+            log(f"    Updated voiceprints for {name} ({sample_count} sample(s))")
 
-    EMBEDDINGS_PATH.write_text(json.dumps(ref_embeddings, indent=2))
+    EMBEDDINGS_PATH.write_text(json.dumps(serialize_voiceprints(ref_embeddings), indent=2))
     log(f"\nSaved updated embeddings to {EMBEDDINGS_PATH}")
     log(f"  Speakers: {', '.join(ref_embeddings.keys())}")
     log("You can now re-diarize undiarized episodes for improved speaker matching.")
@@ -551,10 +741,10 @@ def main():
         log("No speaker embeddings found. Will use anonymous labels (SPEAKER_XX).")
         log("Run with --enroll to set up speaker identification.")
 
-    pipeline = load_diarization_pipeline()
+    pipeline = load_diarization_backend()
     embedding_model = load_embedding_model() if ref_embeddings else None
 
-    log(f"Diarizing {len(to_process)} transcripts ...\n")
+    log(f"Diarizing {len(to_process)} transcripts using provider='{DIARIZATION_PROVIDER}' ...\n")
     for i, video_id in enumerate(to_process, 1):
         video = video_map.get(video_id, {"id": video_id, "title": video_id, "published_at": "?"})
         log(f"[{i}/{len(to_process)}] {video.get('published_at', '?')} — {video.get('title', video_id)[:70]}")
