@@ -10,3 +10,6 @@ torch
 pydub
 numpy
 google-genai
+boto3
+modal
+omegaconf

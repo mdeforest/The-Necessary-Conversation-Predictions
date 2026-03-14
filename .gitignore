@@ -5,6 +5,7 @@ data/predictions/
 data/fact_checks/
 data/speaker_clips/
 data/speaker_embeddings.json
+exports/
 __pycache__/
 *.pyc
 .DS_Store
@@ -13,3 +14,6 @@ __pycache__/
 ui/node_modules/
 ui/dist/
 ui/public/data/
+
+# Infra
+infra/cookies.txt
