@@ -14,6 +14,8 @@ const DATA_SRC = path.resolve(__dirname, '../../data')
 const DATA_DEST = path.resolve(__dirname, '../public/data')
 
 const FORCE_FAKE = process.argv.includes('--fake')
+const LIFECYCLE_EVENT = process.env.npm_lifecycle_event ?? ''
+const INCLUDE_IN_PROGRESS_VIDEOS = LIFECYCLE_EVENT.startsWith('dev')
 
 await mkdir(DATA_DEST, { recursive: true })
 
@@ -149,14 +151,88 @@ function pickVerdict() {
 // ─── videos.json ─────────────────────────────────────────────────────────────
 
 const videosSrc = path.join(DATA_SRC, 'videos.json')
+const reviewStatusSrc = path.join(DATA_SRC, 'review_status.json')
 let videos = []
+
+function normalizeReviewEntry(entry) {
+  if (entry === true) return { reviewed: true, flagged: false, notes: '' }
+  if (!entry || typeof entry !== 'object') return { reviewed: false, flagged: false, notes: '' }
+  return {
+    reviewed: entry.reviewed === true,
+    flagged: entry.flagged === true,
+    notes: typeof entry.notes === 'string' ? entry.notes : '',
+  }
+}
 
 if (!FORCE_FAKE && existsSync(videosSrc)) {
   videos = JSON.parse(await readFile(videosSrc, 'utf-8'))
+  const rawReviewStatus = existsSync(reviewStatusSrc)
+    ? JSON.parse(await readFile(reviewStatusSrc, 'utf-8'))
+    : {}
+  const audioIds = new Set(
+    (await readdir(path.join(DATA_SRC, 'audio')).catch(() => []))
+      .filter(f => f.endsWith('.mp3'))
+      .map(f => f.replace('.mp3', ''))
+  )
+  const transcriptIds = new Set()
+  const diarizedIds = new Set()
+  const predIds = new Set(
+    (await readdir(path.join(DATA_SRC, 'predictions')).catch(() => []))
+      .filter(f => f.endsWith('.json'))
+      .map(f => f.replace('.json', ''))
+  )
+  const fcIds = new Set(
+    (await readdir(path.join(DATA_SRC, 'fact_checks')).catch(() => []))
+      .filter(f => f.endsWith('.json'))
+      .map(f => f.replace('.json', ''))
+  )
 
-  // Determine which video IDs have complete data. Prefer using predictions_master.json
-  // as the source of truth (it's committed to git), with a fallback to checking local
-  // subdirectory files (useful during local pipeline development).
+  const transcriptDir = path.join(DATA_SRC, 'transcripts')
+  const transcriptFiles = await readdir(transcriptDir).catch(() => [])
+  for (const f of transcriptFiles.filter(f => f.endsWith('.json'))) {
+    const fallbackId = f.replace('.json', '')
+    transcriptIds.add(fallbackId)
+    try {
+      const t = JSON.parse(await readFile(path.join(transcriptDir, f), 'utf-8'))
+      const transcriptId = t.video_id ?? fallbackId
+      transcriptIds.add(transcriptId)
+      if (t.diarized === true) diarizedIds.add(transcriptId)
+    } catch { /* skip unreadable files */ }
+  }
+
+  const getPipelineStage = videoId => {
+    const reviewEntry = normalizeReviewEntry(rawReviewStatus[videoId])
+    if (!audioIds.has(videoId)) return { code: 'download', label: 'Queued for download' }
+    if (!transcriptIds.has(videoId)) return { code: 'transcribe', label: 'Transcribing' }
+    if (!diarizedIds.has(videoId)) return { code: 'diarize', label: 'Diarizing' }
+    if (!predIds.has(videoId)) return { code: 'extract', label: 'Extracting predictions' }
+    if (!fcIds.has(videoId)) return { code: 'fact_check', label: 'Fact-checking' }
+    if (reviewEntry.flagged) return { code: 'review', label: 'Flagged for review' }
+    if (!reviewEntry.reviewed) return { code: 'review', label: 'Ready for review' }
+    return { code: 'complete', label: 'Complete' }
+  }
+
+  videos = videos.map(video => {
+    const stage = getPipelineStage(video.id)
+    const reviewEntry = normalizeReviewEntry(rawReviewStatus[video.id])
+    return {
+      ...video,
+      pipeline_stage: stage.code,
+      pipeline_stage_label: stage.label,
+      has_audio: audioIds.has(video.id),
+      has_transcript: transcriptIds.has(video.id),
+      is_diarized: diarizedIds.has(video.id),
+      has_predictions: predIds.has(video.id),
+      has_fact_checks: fcIds.has(video.id),
+      reviewed: reviewEntry.reviewed,
+      flagged_for_review: reviewEntry.flagged,
+      review_notes: reviewEntry.notes,
+    }
+  })
+
+  // Count which video IDs have complete data for reporting purposes. In dev we
+  // keep all videos visible, while production exports only reviewed-complete
+  // episodes.
   let completeIds = new Set()
 
   const masterForFilter = path.resolve(__dirname, '../../predictions_master.json')
@@ -171,32 +247,15 @@ if (!FORCE_FAKE && existsSync(videosSrc)) {
 
   // If master didn't give us any IDs, fall back to checking subdirectory files
   if (completeIds.size === 0) {
-    const predIds = new Set(
-      (await readdir(path.join(DATA_SRC, 'predictions')).catch(() => []))
-        .filter(f => f.endsWith('.json'))
-        .map(f => f.replace('.json', ''))
-    )
-    const fcIds = new Set(
-      (await readdir(path.join(DATA_SRC, 'fact_checks')).catch(() => []))
-        .filter(f => f.endsWith('.json'))
-        .map(f => f.replace('.json', ''))
-    )
-    const transcriptDir = path.join(DATA_SRC, 'transcripts')
-    const diarizedIds = new Set()
-    const transcriptFiles = await readdir(transcriptDir).catch(() => [])
-    for (const f of transcriptFiles.filter(f => f.endsWith('.json'))) {
-      try {
-        const t = JSON.parse(await readFile(path.join(transcriptDir, f), 'utf-8'))
-        if (t.diarized === true) diarizedIds.add(t.video_id ?? f.replace('.json', ''))
-      } catch { /* skip unreadable files */ }
-    }
     for (const id of predIds) if (fcIds.has(id) && diarizedIds.has(id)) completeIds.add(id)
   }
 
-  const doneVideos = completeIds.size > 0 ? videos.filter(v => completeIds.has(v.id)) : []
-  await writeFile(path.join(DATA_DEST, 'videos.json'), JSON.stringify(doneVideos, null, 2))
-  console.log(`  videos.json: ${doneVideos.length} complete episodes (${videos.length - doneVideos.length} in-progress omitted)`)
-  videos = doneVideos
+  const completeCount = videos.filter(v => v.reviewed === true && v.flagged_for_review !== true).length
+  const exportedVideos = INCLUDE_IN_PROGRESS_VIDEOS
+    ? videos
+    : videos.filter(v => v.reviewed === true && v.flagged_for_review !== true)
+  await writeFile(path.join(DATA_DEST, 'videos.json'), JSON.stringify(exportedVideos, null, 2))
+  console.log(`  videos.json: ${videos.length} total episodes (${completeCount} complete, ${videos.length - completeCount} in progress, ${exportedVideos.length} exported)`)
 } else {
   console.warn('  warning: videos.json not found — generating fake episode list')
   const startDate = new Date('2023-04-10')

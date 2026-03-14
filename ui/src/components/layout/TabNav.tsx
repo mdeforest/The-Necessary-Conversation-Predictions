@@ -1,13 +1,14 @@
 import clsx from 'clsx'
 
-export type Tab = 'overview' | 'speakers' | 'topics' | 'browse' | 'episodes'
+export type Tab = 'overview' | 'speakers' | 'topics' | 'browse' | 'episodes' | 'transcript'
 
-const TABS: { id: Tab; label: string }[] = [
+const TABS: { id: Tab; label: string; devOnly?: boolean }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'speakers', label: 'Speakers' },
   { id: 'topics', label: 'Topics' },
   { id: 'browse', label: 'Browse' },
   { id: 'episodes', label: 'Episodes' },
+  { id: 'transcript', label: 'Transcript', devOnly: true },
 ]
 
 interface TabNavProps {
@@ -16,10 +17,13 @@ interface TabNavProps {
 }
 
 export function TabNav({ active, onChange }: TabNavProps) {
+  const isDev = import.meta.env.DEV
+  const tabs = TABS.filter(tab => isDev || !tab.devOnly)
+
   return (
     <nav className="border-b border-gray-200 bg-white px-6 dark:border-[#1E3A60] dark:bg-[#0C1A3A]">
       <div className="max-w-7xl mx-auto flex gap-1">
-        {TABS.map(tab => (
+        {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => onChange(tab.id)}

@@ -5,7 +5,8 @@ const CENSOR_PATTERNS = [
   /\bgoddamn(?:ed|ing)?\b/gi,
   /\bfuck(?:ing|ed|er|ers)?\b/gi,
   /\bshit(?:s|ty)?\b/gi,
-  /\bass(?:hole)(?:s)?\b/gi,
+  /\bass\b/gi,
+  /\basshole(?:s)?\b/gi,
   /\bbitch(?:es|y)?\b/gi,
   /\bbastard(?:s)?\b/gi,
   /\bdamn(?:ed|ing)?\b/gi,
@@ -17,5 +18,6 @@ function maskWord(word: string): string {
 }
 
 export function censorText(text: string): string {
-  return CENSOR_PATTERNS.reduce((current, pattern) => current.replace(pattern, match => maskWord(match)), text)
+  const safeText = text ?? ''
+  return CENSOR_PATTERNS.reduce((current, pattern) => current.replace(pattern, match => maskWord(match)), safeText)
 }

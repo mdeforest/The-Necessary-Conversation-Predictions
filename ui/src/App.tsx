@@ -10,13 +10,14 @@ import { SpeakersTab } from './components/speakers/SpeakersTab'
 import { TopicsTab } from './components/topics/TopicsTab'
 import { BrowseTab } from './components/browse/BrowseTab'
 import { EpisodesTab } from './components/episodes/EpisodesTab'
+import { TranscriptReviewTab } from './components/transcript-review/TranscriptReviewTab'
 import { useTheme } from './hooks/useTheme'
 import { ThemeContext } from './context/ThemeContext'
 
 const STORAGE_KEY = 'nc-app-view'
 
 function isTab(value: string): value is Tab {
-  return ['overview', 'speakers', 'topics', 'browse', 'episodes'].includes(value)
+  return ['overview', 'speakers', 'topics', 'browse', 'episodes', 'transcript'].includes(value)
 }
 
 function getInitialAppView(): { tab: Tab; selectedEpisodeId: string | null } {
@@ -112,6 +113,9 @@ export default function App() {
               selectedId={selectedEpisodeId}
               onSelectId={setSelectedEpisodeId}
             />
+          )}
+          {tab === 'transcript' && import.meta.env.DEV && (
+            <TranscriptReviewTab videos={data.videos} />
           )}
         </main>
       </div>

@@ -15,7 +15,33 @@ interface EpisodesTabProps {
   onSelectId: (id: string | null) => void
 }
 
+type ReviewEntry = {
+  reviewed: boolean
+  flagged: boolean
+  notes: string
+}
+type ReviewStateMap = Record<string, ReviewEntry>
+type RecordOverrideMap = Record<string, Partial<MasterRecord>>
+
 const SEEK_SCROLL_THRESHOLD_SECONDS = 3
+const isDev = import.meta.env.DEV
+const TOPIC_OPTIONS = ['politics', 'economy', 'tech', 'sports', 'culture', 'science', 'geopolitics', 'other'] as const
+const SPECIFICITY_OPTIONS = ['high', 'medium', 'low'] as const
+const CONFIDENCE_OPTIONS = ['high', 'medium', 'low'] as const
+const STATUS_OPTIONS = [
+  { value: 'true', label: 'Correct' },
+  { value: 'false', label: 'Wrong' },
+  { value: 'partially true', label: 'Partially True' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'unverifiable', label: 'Unverifiable' },
+] as const
+
+function parseSourceList(value: string): string[] {
+  return value
+    .split(/[\n,]+/)
+    .map(item => item.trim().replace(/^["']+|["']+$/g, ''))
+    .filter(Boolean)
+}
 
 // Speaker choices for the inline editor (dev only)
 const SPEAKER_OPTIONS = [...KNOWN_SPEAKERS, 'Unknown'] as const
@@ -34,6 +60,57 @@ function extractVideoId(url: string): string | null {
   } catch {
     return null
   }
+}
+
+function getStageClasses(stage?: Video['pipeline_stage']): string {
+  switch (stage) {
+    case 'download':
+      return 'border-gray-200 bg-gray-50 text-gray-600 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300'
+    case 'transcribe':
+      return 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800/60 dark:bg-sky-950/30 dark:text-sky-300'
+    case 'diarize':
+      return 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800/60 dark:bg-violet-950/30 dark:text-violet-300'
+    case 'extract':
+      return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-300'
+    case 'fact_check':
+      return 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-300'
+    case 'review':
+      return 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800/60 dark:bg-orange-950/30 dark:text-orange-300'
+    case 'complete':
+      return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-300'
+    default:
+      return 'border-gray-200 bg-gray-50 text-gray-600 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300'
+  }
+}
+
+function getEffectiveStage(video: Video, reviewStatus: ReviewStateMap): { code: Video['pipeline_stage']; label: string } | null {
+  const reviewEntry = reviewStatus[video.id] ?? {
+    reviewed: video.reviewed ?? false,
+    flagged: video.flagged_for_review ?? false,
+    notes: video.review_notes ?? '',
+  }
+
+  if (!video.has_audio) return { code: 'download', label: 'Queued for download' }
+  if (!video.has_transcript) return { code: 'transcribe', label: 'Transcribing' }
+  if (!video.is_diarized) return { code: 'diarize', label: 'Diarizing' }
+  if (!video.has_predictions) return { code: 'extract', label: 'Extracting predictions' }
+  if (!video.has_fact_checks) return { code: 'fact_check', label: 'Fact-checking' }
+  if (reviewEntry.flagged) return { code: 'review', label: 'Flagged for review' }
+  if (!reviewEntry.reviewed) return { code: 'review', label: 'Ready for review' }
+  return { code: 'complete', label: 'Complete' }
+}
+
+function StageBadge({ stage }: { stage: { code: Video['pipeline_stage']; label: string } | null }) {
+  if (!isDev || !stage?.label) return null
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${getStageClasses(stage.code)}`}
+      title={`Current pipeline stage: ${stage.label}`}
+    >
+      {stage.label}
+    </span>
+  )
 }
 
 function getPredictionIdForTime(preds: MasterRecord[], time: number | null, lookAheadSeconds = 0): string | null {
@@ -81,13 +158,18 @@ interface PredRowProps {
   onEditStart: () => void
   onEditSave: (speaker: string) => void
   onEditCancel: () => void
+  onRecordSave: (predictionId: string, patch: Partial<MasterRecord>) => Promise<{ reopened: boolean }>
+  onCopyPrompt: (type: 'extract' | 'fact_check', predictionId: string) => Promise<void>
 }
 
 function PredRow({
   pred, isActive, isFlashing, onSeek,
-  isDev, isEditing, onEditStart, onEditSave, onEditCancel,
+  isDev, isEditing, onEditStart, onEditSave, onEditCancel, onRecordSave, onCopyPrompt,
 }: PredRowProps) {
   const [expanded, setExpanded] = useState(false)
+  const [isEditingRecord, setIsEditingRecord] = useState(false)
+  const [isSavingRecord, setIsSavingRecord] = useState(false)
+  const [editorStatus, setEditorStatus] = useState('')
   const selectRef = useRef<HTMLSelectElement>(null)
   const color = SPEAKER_COLORS[pred.speaker] ?? '#6b7280'
   const firstName = getSpeakerDisplayName(pred.speaker)
@@ -96,6 +178,29 @@ function PredRow({
   const prediction = censorText(pred.prediction)
   const context = censorText(pred.context)
   const explanation = censorText(pred.explanation)
+  const [draftPrediction, setDraftPrediction] = useState(pred.prediction)
+  const [draftContext, setDraftContext] = useState(pred.context ?? '')
+  const [draftTopic, setDraftTopic] = useState(pred.topic)
+  const [draftTimeframe, setDraftTimeframe] = useState(pred.timeframe)
+  const [draftSpecificity, setDraftSpecificity] = useState(pred.specificity)
+  const [draftTimestamp, setDraftTimestamp] = useState(pred.timestamp_seconds != null ? String(pred.timestamp_seconds) : '')
+  const [draftVerdict, setDraftVerdict] = useState(pred.verdict)
+  const [draftConfidence, setDraftConfidence] = useState(pred.confidence)
+  const [draftExplanation, setDraftExplanation] = useState(pred.explanation ?? '')
+  const [draftSources, setDraftSources] = useState((pred.sources ?? []).join('\n'))
+
+  useEffect(() => {
+    setDraftPrediction(pred.prediction)
+    setDraftContext(pred.context ?? '')
+    setDraftTopic(pred.topic)
+    setDraftTimeframe(pred.timeframe)
+    setDraftSpecificity(pred.specificity)
+    setDraftTimestamp(pred.timestamp_seconds != null ? String(pred.timestamp_seconds) : '')
+    setDraftVerdict(pred.verdict)
+    setDraftConfidence(pred.confidence)
+    setDraftExplanation(pred.explanation ?? '')
+    setDraftSources((pred.sources ?? []).join('\n'))
+  }, [pred])
 
   return (
     <div
@@ -185,8 +290,58 @@ function PredRow({
           <>
             {expanded && (
               <div className="mt-2.5 pt-2.5 border-t border-gray-100 dark:border-[#1E3A60] space-y-2">
+                {isDev && (
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <button
+                        onClick={() => {
+                          setIsEditingRecord(value => !value)
+                          setEditorStatus('')
+                        }}
+                        className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                      >
+                        {isEditingRecord ? 'Close editor' : 'Edit prediction / fact-check'}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await onCopyPrompt('extract', pred.prediction_id)
+                          } catch (error) {
+                            setEditorStatus(error instanceof Error ? error.message : 'Failed to copy extraction prompt.')
+                          }
+                        }}
+                        className="text-xs text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
+                      >
+                        Copy extraction prompt
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await onCopyPrompt('fact_check', pred.prediction_id)
+                          } catch (error) {
+                            setEditorStatus(error instanceof Error ? error.message : 'Failed to copy fact-check prompt.')
+                          }
+                        }}
+                        className="text-xs text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
+                      >
+                        Copy fact-check prompt
+                      </button>
+                    </div>
+                    {editorStatus && (
+                      <span className="text-xs text-gray-400 dark:text-zinc-500">{editorStatus}</span>
+                    )}
+                  </div>
+                )}
                 {pred.context && (
                   <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">{context}</p>
+                )}
+                {pred.timeframe && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-xs text-gray-400 uppercase tracking-wider dark:text-zinc-600">
+                      Timeframe
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">{pred.timeframe}</p>
+                  </div>
                 )}
                 {pred.explanation && (
                   <div>
@@ -201,6 +356,119 @@ function PredRow({
                     {generatedLabel && (
                         <p className="text-xs italic text-gray-500 dark:text-zinc-400 pt-3">Generated {generatedLabel}</p>
                     )}
+                  </div>
+                )}
+                {isDev && isEditingRecord && (
+                  <div className="space-y-3 rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-[#1E3A60] dark:bg-[#0F1B38]">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-500">Prediction</label>
+                      <textarea value={draftPrediction} onChange={e => setDraftPrediction(e.target.value)} className="min-h-[72px] w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-500">Context</label>
+                      <textarea value={draftContext} onChange={e => setDraftContext(e.target.value)} className="min-h-[72px] w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200" />
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      <label className="space-y-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-500">Topic</span>
+                        <select value={draftTopic} onChange={e => setDraftTopic(e.target.value as typeof pred.topic)} className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">
+                          {TOPIC_OPTIONS.map(option => <option key={option} value={option}>{option}</option>)}
+                        </select>
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-500">Specificity</span>
+                        <select value={draftSpecificity} onChange={e => setDraftSpecificity(e.target.value as typeof pred.specificity)} className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">
+                          {SPECIFICITY_OPTIONS.map(option => <option key={option} value={option}>{option}</option>)}
+                        </select>
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-500">Timeframe</span>
+                        <input value={draftTimeframe} onChange={e => setDraftTimeframe(e.target.value)} className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200" />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-500">Timestamp Seconds</span>
+                        <input value={draftTimestamp} onChange={e => setDraftTimestamp(e.target.value)} className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200" />
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      <label className="space-y-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-500">Status</span>
+                        <select value={draftVerdict} onChange={e => setDraftVerdict(e.target.value as typeof pred.verdict)} className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">
+                          {STATUS_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-500">Confidence</span>
+                        <select value={draftConfidence} onChange={e => setDraftConfidence(e.target.value as typeof pred.confidence)} className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">
+                          {CONFIDENCE_OPTIONS.map(option => <option key={option} value={option}>{option}</option>)}
+                        </select>
+                      </label>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-500">Fact-check Explanation</label>
+                      <textarea value={draftExplanation} onChange={e => setDraftExplanation(e.target.value)} className="min-h-[72px] w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-500">Sources</label>
+                      <textarea value={draftSources} onChange={e => setDraftSources(e.target.value)} placeholder="One URL per line or comma-separated" className="min-h-[72px] w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={async () => {
+                          setIsSavingRecord(true)
+                          setEditorStatus('')
+                          try {
+                            const { reopened } = await onRecordSave(pred.prediction_id, {
+                              prediction: draftPrediction,
+                              context: draftContext,
+                              topic: draftTopic,
+                              timeframe: draftTimeframe,
+                              specificity: draftSpecificity,
+                              timestamp_seconds: draftTimestamp.trim() === '' ? null : Number(draftTimestamp),
+                              verdict: draftVerdict,
+                              confidence: draftConfidence,
+                              explanation: draftExplanation,
+                              sources: parseSourceList(draftSources),
+                              date_generated: pred.date_generated ?? null,
+                            })
+                            setEditorStatus(reopened ? 'Prediction updated. Fact-check reopened.' : 'Saved.')
+                            if (reopened) {
+                              setDraftVerdict('pending')
+                              setDraftConfidence('low')
+                              setDraftExplanation('Prediction updated and needs to be fact-checked again.')
+                              setDraftSources('')
+                            }
+                          } catch (error) {
+                            setEditorStatus(error instanceof Error ? error.message : 'Failed to save changes.')
+                          } finally {
+                            setIsSavingRecord(false)
+                          }
+                        }}
+                        disabled={isSavingRecord}
+                        className="rounded-md bg-[#B22234] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#9d1e2e] disabled:opacity-50"
+                      >
+                        {isSavingRecord ? 'Saving…' : 'Save changes'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsEditingRecord(false)
+                          setEditorStatus('')
+                          setDraftPrediction(pred.prediction)
+                          setDraftContext(pred.context ?? '')
+                          setDraftTopic(pred.topic)
+                          setDraftTimeframe(pred.timeframe)
+                          setDraftSpecificity(pred.specificity)
+                          setDraftTimestamp(pred.timestamp_seconds != null ? String(pred.timestamp_seconds) : '')
+                          setDraftVerdict(pred.verdict)
+                          setDraftConfidence(pred.confidence)
+                          setDraftExplanation(pred.explanation ?? '')
+                          setDraftSources((pred.sources ?? []).join('\n'))
+                        }}
+                        className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:border-gray-300 dark:border-zinc-700 dark:text-zinc-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -223,12 +491,16 @@ function PredRow({
 interface EpisodeDetailProps {
   video: Video
   preds: MasterRecord[]
+  reviewStatus: ReviewStateMap
+  onSaveReview: (videoId: string, review: ReviewEntry) => Promise<void>
+  onSaveRecord: (videoId: string, predictionId: string, patch: Partial<MasterRecord>) => Promise<{ reopened: boolean }>
+  onCopyPrompt: (videoId: string, predictionId: string, type: 'extract' | 'fact_check') => Promise<void>
   onBack: () => void
   onPrevious: (() => void) | null
   onNext: (() => void) | null
 }
 
-function EpisodeDetail({ video, preds, onBack, onPrevious, onNext }: EpisodeDetailProps) {
+function EpisodeDetail({ video, preds, reviewStatus, onSaveReview, onSaveRecord, onCopyPrompt, onBack, onPrevious, onNext }: EpisodeDetailProps) {
   const playerContainerRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<any>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -247,13 +519,24 @@ function EpisodeDetail({ video, preds, onBack, onPrevious, onNext }: EpisodeDeta
   const [scrollOverridePredId, setScrollOverridePredId] = useState<string | null>(null)
 
   // Dev-only: speaker overrides (prediction_id → speaker name)
-  const isDev = import.meta.env.DEV
   const [overrides, setOverrides] = useState<Record<string, string>>({})
   const [editingPredId, setEditingPredId] = useState<string | null>(null)
   const [showRebuildHint, setShowRebuildHint] = useState(false)
+  const [reviewSaving, setReviewSaving] = useState(false)
   const videoTitle = censorText(video.title)
+  const stage = getEffectiveStage(video, reviewStatus)
+  const reviewEntry = reviewStatus[video.id] ?? {
+    reviewed: video.reviewed ?? false,
+    flagged: video.flagged_for_review ?? false,
+    notes: video.review_notes ?? '',
+  }
+  const [reviewNotes, setReviewNotes] = useState(reviewEntry.notes)
 
   const videoId = extractVideoId(video.url)
+
+  useEffect(() => {
+    setReviewNotes(reviewEntry.notes)
+  }, [reviewEntry.notes, video.id])
 
   // Load YT IFrame API
   useEffect(() => {
@@ -590,6 +873,95 @@ function EpisodeDetail({ video, preds, onBack, onPrevious, onNext }: EpisodeDeta
                 </>
               )}
             </div>
+            {isDev && (
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                <StageBadge stage={stage} />
+                {video.has_fact_checks && (
+                  <>
+                    <button
+                      onClick={async () => {
+                        setReviewSaving(true)
+                        try {
+                          await onSaveReview(video.id, {
+                            ...reviewEntry,
+                            reviewed: !reviewEntry.reviewed,
+                            flagged: reviewEntry.flagged && !reviewEntry.reviewed ? false : reviewEntry.flagged,
+                            notes: reviewNotes,
+                          })
+                        } finally {
+                          setReviewSaving(false)
+                        }
+                      }}
+                      disabled={reviewSaving}
+                      className={[
+                        'rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors',
+                        reviewEntry.reviewed && !reviewEntry.flagged
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-300'
+                          : 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800/60 dark:bg-orange-950/30 dark:text-orange-300',
+                        reviewSaving ? 'opacity-60 cursor-wait' : '',
+                      ].join(' ')}
+                      title={reviewEntry.reviewed ? 'Mark this episode as needing review again' : 'Mark this episode as reviewed'}
+                    >
+                      {reviewSaving ? 'Saving…' : reviewEntry.reviewed ? 'Reviewed' : 'Mark reviewed'}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        setReviewSaving(true)
+                        try {
+                          await onSaveReview(video.id, {
+                            ...reviewEntry,
+                            flagged: !reviewEntry.flagged,
+                            notes: reviewNotes,
+                          })
+                        } finally {
+                          setReviewSaving(false)
+                        }
+                      }}
+                      disabled={reviewSaving}
+                      className={[
+                        'rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors',
+                        reviewEntry.flagged
+                          ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-800/60 dark:bg-red-950/30 dark:text-red-300'
+                          : 'border-gray-200 bg-gray-50 text-gray-700 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300',
+                        reviewSaving ? 'opacity-60 cursor-wait' : '',
+                      ].join(' ')}
+                      title={reviewEntry.flagged ? 'Clear further review flag' : 'Flag this episode for further review'}
+                    >
+                      {reviewEntry.flagged ? 'Flagged' : 'Flag for review'}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+            {isDev && video.has_fact_checks && (
+              <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-[#1E3A60] dark:bg-[#0F1B38]">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-500">
+                    Review Notes
+                  </p>
+                  <button
+                    onClick={async () => {
+                      setReviewSaving(true)
+                      try {
+                        await onSaveReview(video.id, { ...reviewEntry, notes: reviewNotes })
+                      } finally {
+                        setReviewSaving(false)
+                      }
+                    }}
+                    disabled={reviewSaving}
+                    className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-medium text-gray-700 transition-colors hover:border-gray-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-600"
+                  >
+                    {reviewSaving ? 'Saving…' : 'Save notes'}
+                  </button>
+                </div>
+                <textarea
+                  value={reviewNotes}
+                  onChange={e => setReviewNotes(e.target.value)}
+                  placeholder="Add follow-up notes about why this episode needs another pass."
+                  className="mt-2 min-h-[88px] w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+                />
+              </div>
+            )}
           </div>
 
           {preds.length > 0 && (
@@ -662,6 +1034,8 @@ function EpisodeDetail({ video, preds, onBack, onPrevious, onNext }: EpisodeDeta
                     onEditStart={() => setEditingPredId(pred.prediction_id)}
                     onEditSave={speaker => handleSpeakerSave(pred, speaker)}
                     onEditCancel={() => setEditingPredId(null)}
+                    onRecordSave={(predictionId, patch) => onSaveRecord(video.id, predictionId, patch)}
+                    onCopyPrompt={(type, predictionId) => onCopyPrompt(video.id, predictionId, type)}
                   />
                 ))}
               </div>
@@ -677,12 +1051,96 @@ function EpisodeDetail({ video, preds, onBack, onPrevious, onNext }: EpisodeDeta
 // ─── Episode list ─────────────────────────────────────────────────────────────
 
 export function EpisodesTab({ videos, predictions, selectedId, onSelectId }: EpisodesTabProps) {
+  const [reviewStatus, setReviewStatus] = useState<ReviewStateMap>({})
+  const [recordOverrides, setRecordOverrides] = useState<RecordOverrideMap>({})
+
+  useEffect(() => {
+    if (!isDev) return
+    fetch('/api/review-status')
+      .then(r => r.json())
+      .then((data: ReviewStateMap) => setReviewStatus(data))
+      .catch(() => {})
+  }, [])
+
+  const handleSaveReview = async (videoId: string, review: ReviewEntry) => {
+    if (!isDev) return
+    await fetch('/api/review-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        video_id: videoId,
+        reviewed: review.reviewed,
+        flagged: review.flagged,
+        notes: review.notes,
+      }),
+    })
+    setReviewStatus(prev => ({ ...prev, [videoId]: review }))
+  }
 
   const predsByVideo = new Map<string, MasterRecord[]>()
   for (const p of predictions) {
+    const next = recordOverrides[p.prediction_id] ? { ...p, ...recordOverrides[p.prediction_id] } : p
     const arr = predsByVideo.get(p.video_id) ?? []
-    arr.push(p)
+    arr.push(next)
     predsByVideo.set(p.video_id, arr)
+  }
+
+  const handleSaveRecord = async (videoId: string, predictionId: string, patch: Partial<MasterRecord>) => {
+    const predictionPayload = {
+      prediction: patch.prediction,
+      context: patch.context,
+      topic: patch.topic,
+      timeframe: patch.timeframe,
+      specificity: patch.specificity,
+      timestamp_seconds: patch.timestamp_seconds,
+    }
+    const factCheckPayload = {
+      verdict: patch.verdict,
+      confidence: patch.confidence,
+      explanation: patch.explanation,
+      sources: patch.sources ?? [],
+      date_generated: patch.date_generated ?? null,
+    }
+
+    const response = await fetch('/api/prediction-editor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        video_id: videoId,
+        prediction_id: predictionId,
+        prediction: predictionPayload,
+        fact_check: factCheckPayload,
+      }),
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error ?? 'Failed to save prediction changes')
+
+    setRecordOverrides(prev => ({
+      ...prev,
+      [predictionId]: {
+        ...predictionPayload,
+        ...data.fact_check,
+      },
+    }))
+    if (data.reopened_for_fact_check) {
+      setReviewStatus(prev => ({
+        ...prev,
+        [videoId]: {
+          ...(prev[videoId] ?? { reviewed: false, flagged: false, notes: '' }),
+          reviewed: false,
+        },
+      }))
+    }
+    return { reopened: Boolean(data.reopened_for_fact_check) }
+  }
+
+  const handleCopyPrompt = async (videoId: string, predictionId: string, type: 'extract' | 'fact_check') => {
+    const params = new URLSearchParams({ video_id: videoId, type })
+    if (type === 'fact_check') params.set('prediction_id', predictionId)
+    const response = await fetch(`/api/prompt-preview?${params.toString()}`)
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error ?? 'Failed to build prompt')
+    await navigator.clipboard.writeText(data.combined)
   }
 
   const sorted = [...videos].sort(
@@ -702,6 +1160,10 @@ export function EpisodesTab({ videos, predictions, selectedId, onSelectId }: Epi
           key={video.id}
           video={video}
           preds={preds}
+          reviewStatus={reviewStatus}
+          onSaveReview={handleSaveReview}
+          onSaveRecord={handleSaveRecord}
+          onCopyPrompt={handleCopyPrompt}
           onBack={() => onSelectId(null)}
           onPrevious={previousVideo ? () => onSelectId(previousVideo.id) : null}
           onNext={nextVideo ? () => onSelectId(nextVideo.id) : null}
@@ -720,6 +1182,7 @@ export function EpisodesTab({ videos, predictions, selectedId, onSelectId }: Epi
         }, {})
         const accuracy = getAccuracyFromCounts(counts)
         const videoTitle = censorText(video.title)
+        const stage = getEffectiveStage(video, reviewStatus)
 
         return (
           <button
@@ -729,7 +1192,10 @@ export function EpisodesTab({ videos, predictions, selectedId, onSelectId }: Epi
           >
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-800 truncate dark:text-zinc-200">{videoTitle}</p>
-              <p className="text-xs text-gray-500 mt-0.5 dark:text-zinc-500">{video.published_at}</p>
+              <div className="mt-0.5 flex items-center gap-2 flex-wrap">
+                <p className="text-xs text-gray-500 dark:text-zinc-500">{video.published_at}</p>
+                <StageBadge stage={stage} />
+              </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
               {preds.length > 0 ? (

@@ -8,6 +8,23 @@ export interface Video {
   url: string
   published_at: string // ISO date string
   duration_seconds: number
+  pipeline_stage?: 'download' | 'transcribe' | 'diarize' | 'extract' | 'fact_check' | 'review' | 'complete'
+  pipeline_stage_label?: string
+  has_audio?: boolean
+  has_transcript?: boolean
+  is_diarized?: boolean
+  has_predictions?: boolean
+  has_fact_checks?: boolean
+  reviewed?: boolean
+  flagged_for_review?: boolean
+  review_notes?: string
+}
+
+export interface TranscriptSegment {
+  start: number
+  end: number
+  text: string
+  speaker?: string
 }
 
 export interface Prediction {
