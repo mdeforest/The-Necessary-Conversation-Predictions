@@ -88,7 +88,7 @@
     "SPEAKER_00": "Unknown",
     "SPEAKER_01": "Chad Kultgen",
     "SPEAKER_02": "Chad Kultgen",
-    "SPEAKER_05": "Bob Kultgen"
+    "SPEAKER_05": ""
   },
   "StfBHAhM0PY": {
     "SPEAKER_00": "",
@@ -138,7 +138,7 @@
   "ZIo5_U7QZMI": {
     "SPEAKER_00": "Mary Lou Kultgen",
     "SPEAKER_01": "Chad Kultgen",
-    "SPEAKER_02": "Mary Lou Kultgen",
+    "SPEAKER_02": "",
     "SPEAKER_03": "Chad Kultgen",
     "SPEAKER_04": "Bob Kultgen",
     "SPEAKER_05": "Chad Kultgen"
@@ -171,44 +171,5 @@
     "SPEAKER_04": "",
     "SPEAKER_05": "Chad Kultgen",
     "SPEAKER_07": "Chad Kultgen"
-  },
-  "1QT_t6WxNJ0": {
-    "SPEAKER_05": "Mary Lou Kultgen",
-    "SPEAKER_03": "Bob Kultgen"
-  },
-  "1TPTvty-Cck": {
-    "SPEAKER_02": "Bob Kultgen",
-    "SPEAKER_04": "Mary Lou Kultgen"
-  },
-  "8wqM7iiqy-4": {
-    "SPEAKER_02": "Bob Kultgen",
-    "SPEAKER_03": "Bob Kultgen"
-  },
-  "9QD-_7EVYKs": {
-    "SPEAKER_05": "Mary Lou Kultgen",
-    "SPEAKER_06": "Chad Kultgen"
-  },
-  "A5cSnnZ60XA": {
-    "SPEAKER_02": "Mary Lou Kultgen"
-  },
-  "1Pt79rEFEbc": {
-    "SPEAKER_03": "Mary Lou Kultgen",
-    "SPEAKER_01": "Bob Kultgen"
-  },
-  "8vAx6ZFHXFM": {
-    "SPEAKER_02": "Mary Lou Kultgen",
-    "SPEAKER_03": "Bob Kultgen"
-  },
-  "3I7Bb6qh564": {
-    "SPEAKER_07": "Mary Lou Kultgen",
-    "SPEAKER_05": "Mary Lou Kultgen"
-  },
-  "-pM-I3tmJ9I": {
-    "SPEAKER_03": "Bob Kultgen",
-    "SPEAKER_04": "Mary Lou Kultgen",
-    "SPEAKER_02": "Mary Lou Kultgen"
-  },
-  "8Hn9RlPFXvA": {
-    "SPEAKER_05": "Bob Kultgen"
   }
 }

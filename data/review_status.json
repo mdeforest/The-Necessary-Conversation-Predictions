@@ -1,11 +1,19 @@
 {
   "DuUP_AqMsrA": true,
-  "NNJaAPTlY4s": true,
-  "LPGCSaOZKFI": true,
+  "NNJaAPTlY4s": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "LPGCSaOZKFI": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
   "JKju6ziapg4": true,
   "OobMP5_8aCw": true,
   "Sv0xzilykdc": {
-    "reviewed": false,
+    "reviewed": true,
     "flagged": false,
     "notes": ""
   },
@@ -86,8 +94,8 @@
     "notes": ""
   },
   "A5cSnnZ60XA": {
-    "reviewed": false,
-    "flagged": true,
+    "reviewed": true,
+    "flagged": false,
     "notes": "Some fact checks arent finished"
   },
   "1Pt79rEFEbc": {
@@ -111,6 +119,231 @@
     "notes": ""
   },
   "8Hn9RlPFXvA": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "bhJmJHey3WE": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": "Theres still some missing facts."
+  },
+  "jHFBMMW5HBM": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "cPm72MbGK5g": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "sgAIeYOt8RQ": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": "waiting on facts"
+  },
+  "xvGCwMgGuj8": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "vuUUorZFaA0": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "_Vz79CpAvgg": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "fTZh-tDcAs0": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "i6JlZObT4KE": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "ZPMzzSYRkvs": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "T-7xIyE4S1Q": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "irmUP8V-nIo": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "aTdCpTkMt_Q": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "KsTlYC1nbXs": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "ILE9Gr4i_W8": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "hhTFu9e2kIk": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "Hq-mS8LenlM": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "dW-J9ofMvm0": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "qHZ5btPc6Os": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "qDywFQmU04Q": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "e9dDm_tqsKQ": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "gMqjB9yoAbg": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "uoj4zyDACvY": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "_3znCS4kzwY": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "rBgPbXQxOUQ": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "HN4rEN-GkFE": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "lNzHr4TftGU": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "pInCly0gXAw": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "iNh3uyrD-WA": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "yYVpmyXASpw": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "YFoPg2Ir3vk": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "cG9QYOYftP8": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "GOritxDFpeY": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "CauRCD29J0w": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "fQywzZmazGA": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "uO3nh0l3yxo": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "VZohxzfcebA": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": "missing timestamp"
+  },
+  "tYOKMr1nAbI": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "UaSFs6939CE": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "IK9BSaHE5S4": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "aujr6V9FXyg": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "avtXbDYd4-0": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "oC1oMvw_H6Y": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "h_aeylpMaG0": {
+    "reviewed": true,
+    "flagged": false,
+    "notes": ""
+  },
+  "ajSC2z05LNU": {
     "reviewed": true,
     "flagged": false,
     "notes": ""
