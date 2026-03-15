@@ -15,6 +15,7 @@ export interface Video {
   is_diarized?: boolean
   has_predictions?: boolean
   has_fact_checks?: boolean
+  has_pending_fact_checks?: boolean
   reviewed?: boolean
   flagged_for_review?: boolean
   review_notes?: string

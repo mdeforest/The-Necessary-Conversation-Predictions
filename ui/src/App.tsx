@@ -6,6 +6,10 @@ import { StatsBar } from './components/overview/StatsBar'
 import { VerdictChart } from './components/overview/VerdictChart'
 import { TimelineChart } from './components/overview/TimelineChart'
 import { Leaderboard } from './components/overview/Leaderboard'
+import { OverviewHero } from './components/overview/OverviewHero'
+import { SpeakerPerformanceChart } from './components/overview/SpeakerPerformanceChart'
+import { TopicPulseChart } from './components/overview/TopicPulseChart'
+import { ConfidenceSpecificityMatrix } from './components/overview/ConfidenceSpecificityMatrix'
 import { SpeakersTab } from './components/speakers/SpeakersTab'
 import { TopicsTab } from './components/topics/TopicsTab'
 import { BrowseTab } from './components/browse/BrowseTab'
@@ -73,6 +77,7 @@ export default function App() {
         <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-6">
           {tab === 'overview' && (
             <div className="space-y-4">
+              <OverviewHero predictions={data.predictions} episodeCount={data.videos.length} />
               <StatsBar predictions={data.predictions} episodeCount={data.videos.length} />
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div className="lg:col-span-2">
@@ -80,10 +85,17 @@ export default function App() {
                 </div>
                 <VerdictChart predictions={data.predictions} />
               </div>
-              <Leaderboard
-                predictions={data.predictions}
-                onSelectSpeaker={() => { setTab('speakers') }}
-              />
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <SpeakerPerformanceChart predictions={data.predictions} />
+                <TopicPulseChart predictions={data.predictions} />
+              </div>
+              <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-4">
+                <Leaderboard
+                  predictions={data.predictions}
+                  onSelectSpeaker={() => { setTab('speakers') }}
+                />
+                <ConfidenceSpecificityMatrix predictions={data.predictions} />
+              </div>
             </div>
           )}
           {tab === 'speakers' && (

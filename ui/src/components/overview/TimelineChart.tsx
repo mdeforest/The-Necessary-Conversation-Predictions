@@ -3,23 +3,14 @@ import {
   Area,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts'
 import type { MasterRecord } from '@/types'
-import { VERDICT_COLORS } from '@/types'
-import { timelineData } from '@/hooks/usePredictions'
+import { SPEAKER_COLORS, KNOWN_SPEAKERS } from '@/types'
+import { timelineDataBySpeaker } from '@/hooks/usePredictions'
 import { useThemeContext, useTooltipStyle } from '@/context/ThemeContext'
-
-const TIMELINE_VERDICTS = ['true', 'partially true', 'false', 'pending'] as const
-const TIMELINE_GRADIENT_IDS = {
-  true: 'grad-true',
-  'partially true': 'grad-partially-true',
-  false: 'grad-false',
-  pending: 'grad-pending',
-} as const
+import { getSpeakerDisplayName } from '@/components/shared/getSpeakerDisplayName'
 
 interface TimelineChartProps {
   predictions: MasterRecord[]
@@ -28,9 +19,8 @@ interface TimelineChartProps {
 export function TimelineChart({ predictions }: TimelineChartProps) {
   const { isDark } = useThemeContext()
   const tooltip = useTooltipStyle(isDark)
-  const data = timelineData(predictions)
-  const axisColor = isDark ? '#4A7AB5' : '#a1a1aa'
-  const gridColor = isDark ? '#1E3A60' : '#e4e4e7'
+  const data = timelineDataBySpeaker(predictions)
+  const axisColor = isDark ? '#4A7AB5' : '#c4c4c8'
 
   if (data.length === 0) {
     return (
@@ -42,39 +32,66 @@ export function TimelineChart({ predictions }: TimelineChartProps) {
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 dark:bg-[#162244] dark:border-[#1E3A60]">
-      <h3 className="text-sm font-semibold text-[#1B2A5E] uppercase tracking-wider mb-4 dark:text-blue-300">
+      <h3 className="text-sm font-semibold text-[#1B2A5E] uppercase tracking-wider mb-3 dark:text-blue-300">
         Predictions Over Time
       </h3>
-      <ResponsiveContainer width="100%" height={240}>
-        <AreaChart data={data} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-          <defs>
-            {TIMELINE_VERDICTS.map(v => (
-              <linearGradient key={v} id={TIMELINE_GRADIENT_IDS[v]} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={VERDICT_COLORS[v]} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={VERDICT_COLORS[v]} stopOpacity={0} />
-              </linearGradient>
-            ))}
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-          <XAxis
-            dataKey="date"
-            tick={{ fill: axisColor, fontSize: 11 }}
-            tickLine={false}
-            tickFormatter={d => d.slice(0, 7)}
-          />
-          <YAxis tick={{ fill: axisColor, fontSize: 11 }} tickLine={false} />
-          <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} />
-          <Legend
-            formatter={value => (
-              <span style={{ color: isDark ? '#93C5FD' : '#374151', fontSize: 13 }} className="capitalize">{value}</span>
-            )}
-          />
-          <Area type="monotone" dataKey="true" name="Correct" stackId="1" stroke={VERDICT_COLORS.true} fill={`url(#${TIMELINE_GRADIENT_IDS.true})`} />
-          <Area type="monotone" dataKey="partially true" name="Partially True" stackId="1" stroke={VERDICT_COLORS['partially true']} fill={`url(#${TIMELINE_GRADIENT_IDS['partially true']})`} />
-          <Area type="monotone" dataKey="false" name="Wrong" stackId="1" stroke={VERDICT_COLORS.false} fill={`url(#${TIMELINE_GRADIENT_IDS.false})`} />
-          <Area type="monotone" dataKey="pending" name="Pending" stackId="1" stroke={VERDICT_COLORS.pending} fill={`url(#${TIMELINE_GRADIENT_IDS.pending})`} />
-        </AreaChart>
-      </ResponsiveContainer>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+        {KNOWN_SPEAKERS.map(speaker => {
+          const color = SPEAKER_COLORS[speaker]
+          const total = data.reduce((sum, row) => sum + ((row[speaker] as number) ?? 0), 0)
+
+          return (
+            <div key={speaker}>
+              <div className="flex items-baseline justify-between mb-0.5 px-0.5">
+                <span className="text-xs font-medium" style={{ color }}>
+                  {getSpeakerDisplayName(speaker)}
+                </span>
+                <span className="text-xs text-gray-400 dark:text-zinc-500">{total} total</span>
+              </div>
+              <ResponsiveContainer width="100%" height={88}>
+                <AreaChart data={data} margin={{ top: 2, right: 2, left: -28, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id={`grad-${speaker.replace(/\s+/g, '-')}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="10%" stopColor={color} stopOpacity={0.4} />
+                      <stop offset="95%" stopColor={color} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: axisColor, fontSize: 9 }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={d => d.slice(2, 7)}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    tick={{ fill: axisColor, fontSize: 9 }}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                    width={28}
+                  />
+                  <Tooltip
+                    contentStyle={tooltip.contentStyle}
+                    labelStyle={tooltip.labelStyle}
+                    itemStyle={{ ...tooltip.itemStyle, color }}
+                    formatter={(value: number) => [value, getSpeakerDisplayName(speaker)]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey={speaker}
+                    stroke={color}
+                    strokeWidth={1.5}
+                    fill={`url(#grad-${speaker.replace(/\s+/g, '-')})`}
+                    dot={false}
+                    activeDot={{ r: 3, fill: color }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

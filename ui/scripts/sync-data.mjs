@@ -164,6 +164,31 @@ function normalizeReviewEntry(entry) {
   }
 }
 
+function getFactCheckStatus(predictions, factChecks) {
+  if (!predictions.length) return { hasFactChecks: false, hasPendingFactChecks: false }
+  if (!factChecks.length) return { hasFactChecks: false, hasPendingFactChecks: true }
+
+  const factChecksById = new Map(
+    factChecks
+      .filter(entry => entry && entry.prediction_id)
+      .map(entry => [entry.prediction_id, entry])
+  )
+
+  let missingOrStale = false
+  for (const prediction of predictions) {
+    const factCheck = factChecksById.get(prediction.id)
+    if (!factCheck || !factCheck.date_generated) {
+      missingOrStale = true
+      break
+    }
+  }
+
+  return {
+    hasFactChecks: true,
+    hasPendingFactChecks: missingOrStale,
+  }
+}
+
 if (!FORCE_FAKE && existsSync(videosSrc)) {
   videos = JSON.parse(await readFile(videosSrc, 'utf-8'))
   const rawReviewStatus = existsSync(reviewStatusSrc)
@@ -181,11 +206,27 @@ if (!FORCE_FAKE && existsSync(videosSrc)) {
       .filter(f => f.endsWith('.json'))
       .map(f => f.replace('.json', ''))
   )
-  const fcIds = new Set(
-    (await readdir(path.join(DATA_SRC, 'fact_checks')).catch(() => []))
-      .filter(f => f.endsWith('.json'))
-      .map(f => f.replace('.json', ''))
-  )
+  const factCheckStatusByVideoId = new Map()
+  const factCheckFiles = (await readdir(path.join(DATA_SRC, 'fact_checks')).catch(() => []))
+    .filter(f => f.endsWith('.json'))
+
+  for (const fileName of factCheckFiles) {
+    const videoId = fileName.replace('.json', '')
+    let predictions = []
+    let factChecks = []
+
+    try {
+      const predictionData = JSON.parse(await readFile(path.join(DATA_SRC, 'predictions', `${videoId}.json`), 'utf-8'))
+      predictions = Array.isArray(predictionData?.predictions) ? predictionData.predictions : []
+    } catch { /* ignore unreadable predictions */ }
+
+    try {
+      const factCheckData = JSON.parse(await readFile(path.join(DATA_SRC, 'fact_checks', fileName), 'utf-8'))
+      factChecks = Array.isArray(factCheckData?.fact_checks) ? factCheckData.fact_checks : []
+    } catch { /* ignore unreadable fact checks */ }
+
+    factCheckStatusByVideoId.set(videoId, getFactCheckStatus(predictions, factChecks))
+  }
 
   const transcriptDir = path.join(DATA_SRC, 'transcripts')
   const transcriptFiles = await readdir(transcriptDir).catch(() => [])
@@ -202,11 +243,15 @@ if (!FORCE_FAKE && existsSync(videosSrc)) {
 
   const getPipelineStage = videoId => {
     const reviewEntry = normalizeReviewEntry(rawReviewStatus[videoId])
+    const factCheckStatus = factCheckStatusByVideoId.get(videoId) ?? {
+      hasFactChecks: false,
+      hasPendingFactChecks: predIds.has(videoId),
+    }
     if (!audioIds.has(videoId)) return { code: 'download', label: 'Queued for download' }
     if (!transcriptIds.has(videoId)) return { code: 'transcribe', label: 'Transcribing' }
     if (!diarizedIds.has(videoId)) return { code: 'diarize', label: 'Diarizing' }
     if (!predIds.has(videoId)) return { code: 'extract', label: 'Extracting predictions' }
-    if (!fcIds.has(videoId)) return { code: 'fact_check', label: 'Fact-checking' }
+    if (!factCheckStatus.hasFactChecks || factCheckStatus.hasPendingFactChecks) return { code: 'fact_check', label: 'Fact-checking' }
     if (reviewEntry.flagged) return { code: 'review', label: 'Flagged for review' }
     if (!reviewEntry.reviewed) return { code: 'review', label: 'Ready for review' }
     return { code: 'complete', label: 'Complete' }
@@ -223,7 +268,8 @@ if (!FORCE_FAKE && existsSync(videosSrc)) {
       has_transcript: transcriptIds.has(video.id),
       is_diarized: diarizedIds.has(video.id),
       has_predictions: predIds.has(video.id),
-      has_fact_checks: fcIds.has(video.id),
+      has_fact_checks: (factCheckStatusByVideoId.get(video.id)?.hasFactChecks) ?? false,
+      has_pending_fact_checks: (factCheckStatusByVideoId.get(video.id)?.hasPendingFactChecks) ?? predIds.has(video.id),
       reviewed: reviewEntry.reviewed,
       flagged_for_review: reviewEntry.flagged,
       review_notes: reviewEntry.notes,
@@ -247,7 +293,10 @@ if (!FORCE_FAKE && existsSync(videosSrc)) {
 
   // If master didn't give us any IDs, fall back to checking subdirectory files
   if (completeIds.size === 0) {
-    for (const id of predIds) if (fcIds.has(id) && diarizedIds.has(id)) completeIds.add(id)
+    for (const id of predIds) {
+      const factCheckStatus = factCheckStatusByVideoId.get(id)
+      if (factCheckStatus?.hasFactChecks && !factCheckStatus.hasPendingFactChecks && diarizedIds.has(id)) completeIds.add(id)
+    }
   }
 
   const completeCount = videos.filter(v => v.reviewed === true && v.flagged_for_review !== true).length

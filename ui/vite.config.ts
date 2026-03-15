@@ -99,6 +99,7 @@ VERDICTS — use exactly one:
 - "partially true": Some aspects came true, but others did not, or the outcome is mixed.
 
 RESEARCH STRATEGY:
+0. First interpret the claim using the episode context. Treat the context as essential for resolving pronouns, implied subjects, omitted conditions, and what outcome would count as the prediction coming true.
 1. Search for the core claim directly.
 2. Search for counter-evidence.
 3. If ambiguous, search for the most recent news on the topic.
@@ -107,9 +108,30 @@ RESEARCH STRATEGY:
 6. If a prediction depends on whether a named person is still in office, still a candidate, or still alive, verify that explicitly.
 7. If something had to happen before a person left office and did not, the verdict is "false", not "pending".
 
+CLAIM RESOLUTION WORKFLOW:
+- Use every field provided in the user prompt: prediction text, episode context, timeframe, specificity, speaker, timestamp, topic, episode title, and episode date.
+- Before researching, internally rewrite the prediction into one concrete factual claim that captures:
+  1. who or what the claim is about,
+  2. the predicted action or outcome,
+  3. any condition that must happen first,
+  4. the deadline or evaluation window,
+  5. the scope or metric that would count as success.
+- Prefer the narrowest interpretation that is strongly supported by the prediction text plus context.
+- Do not ignore context just because the prediction sentence is short or emotionally phrased.
+- If there are two plausible readings, evaluate the reading best supported by context. Only mention ambiguity when it materially affects the verdict.
+
 TEMPORAL ACCURACY RULES:
 - Never assume a current officeholder from stale knowledge or from the episode context.
 - When mentioning a current officeholder, verify it and use exact dates when they matter.
+
+CONTEXT INTERPRETATION RULES:
+- The podcast "context" field is not proof that the prediction came true, but it is part of the primary claim you are evaluating.
+- Use the context to disambiguate who or what the speaker meant, what triggering condition they were talking about, and what concrete outcome they were predicting.
+- Preserve conditional structure. If the speaker's prediction is effectively "if X happens, Y will follow", do not fact-check Y in isolation from X.
+- If the prediction text is shorthand, elliptical, or emotionally phrased, restate it internally as a precise factual claim before searching.
+- If context reveals that a prediction was about a narrower scope than the text alone suggests, evaluate the narrower scoped claim rather than a broader one.
+- Treat the timeframe as anchored to the episode date unless the prompt clearly gives a different reference point.
+- Treat specificity as a clue about whether the claim may be too vague, but still attempt to resolve it using context before concluding "unverifiable".
 
 CONFIDENCE:
 - "high": Multiple reliable sources agree. The outcome is clear-cut.
@@ -131,36 +153,58 @@ Return ONLY the JSON object, no other text.`
 }
 
 function buildFactCheckUserPrompt(prediction: any, video: any, neutral = false): string {
+  const episodeTitle = video?.title ?? 'Unknown episode'
   const episodeDate = video?.published_at ?? 'Unknown date'
   const timeframe = prediction?.timeframe ?? 'unspecified'
   const topic = prediction?.topic ?? ''
   const specificity = prediction?.specificity ?? ''
   const text = prediction?.prediction ?? ''
+  const context = prediction?.context ?? ''
+  const speaker = prediction?.speaker ?? 'Unknown'
+  const timestamp = prediction?.timestamp_seconds
+  const timestampLine = timestamp != null ? `Timestamp in episode: ${timestamp}s\n` : ''
 
   if (neutral) {
     return (
       "For journalism fact-checking research, please verify whether the following claim came true.\n"
+      + `Episode title: ${episodeTitle}\n`
       + `Date the claim was made: ${episodeDate}\n`
+      + `Speaker: ${speaker}\n`
+      + timestampLine
       + `Topic area: ${topic}\n`
       + `Predicted timeframe: ${timeframe}\n`
+      + `Specificity: ${specificity}\n`
       + `Claim: ${text}\n\n`
-      + "Search for factual evidence about whether this occurred. Focus only on verifiable public facts."
+      + `Episode context: ${context}\n\n`
+      + "Use every field above before searching. First resolve the strongest concrete interpretation of the claim by combining the claim text, context, timeframe, and episode date. "
+      + "Identify the actor, predicted outcome, any condition that has to happen first, the evaluation window, and what evidence would count. "
+      + "Resolve references, implied conditions, and scope from the context, but do not treat the context itself as evidence that the outcome happened. "
+      + "Then search for factual evidence about whether this occurred. "
+      + "Search for both confirming and disconfirming evidence, and be careful not to broaden the claim beyond what the context supports. "
+      + "Focus only on verifiable public facts."
       + FACT_CHECK_JSON_REMINDER
     )
   }
 
   return (
-    `Prediction from podcast episode recorded on ${episodeDate}:\n`
-    + `Speaker: ${prediction?.speaker ?? 'Unknown'}\n`
+    `Prediction from podcast episode:\n`
+    + `Episode title: ${episodeTitle}\n`
+    + `Episode date: ${episodeDate}\n`
+    + `Speaker: ${speaker}\n`
+    + timestampLine
     + `Topic: ${topic}\n`
     + `Predicted timeframe: ${timeframe}\n`
     + `Specificity: ${specificity}\n`
     + `Prediction: ${text}\n`
-    + `Context: ${prediction?.context ?? ''}\n\n`
+    + `Context: ${context}\n\n`
+    + "Use every field above before you search. First rewrite the claim internally as one precise factual prediction using the prediction text plus context. "
+    + "Keep any implied condition, actor, deadline, and scope from the context attached to the claim while evaluating it. "
+    + "Anchor relative timing to the episode date unless the context clearly points elsewhere. "
     + "Search the web to determine whether this prediction came true. "
     + "Consider whether the predicted timeframe has passed. "
     + "Search for both supporting and contradicting evidence. "
-    + "If specificity is 'low', consider whether the prediction is verifiable at all before searching."
+    + "If specificity is 'low', try to resolve the claim with context before deciding it is unverifiable. "
+    + "Do not broaden a narrow contextual claim into a looser general claim."
     + FACT_CHECK_JSON_REMINDER
   )
 }
@@ -515,15 +559,17 @@ function predictionEditorPlugin(): Plugin {
           req.on('data', (chunk: Buffer) => { body += chunk.toString() })
           req.on('end', () => {
             try {
-              const { video_id, prediction_id, prediction, fact_check } = JSON.parse(body) as {
+              const { video_id, prediction_id, prediction, fact_check, reopen_fact_check, delete_prediction } = JSON.parse(body) as {
                 video_id: string
                 prediction_id: string
                 prediction: Record<string, unknown>
                 fact_check?: Record<string, unknown> | null
+                reopen_fact_check?: boolean
+                delete_prediction?: boolean
               }
 
-              if (!video_id || !prediction_id || !prediction || typeof prediction !== 'object') {
-                throw new Error('video_id, prediction_id, and prediction are required')
+              if (!video_id || !prediction_id) {
+                throw new Error('video_id and prediction_id are required')
               }
 
               const predictionPath = path.join(PREDICTIONS_DIR, `${video_id}.json`)
@@ -533,10 +579,38 @@ function predictionEditorPlugin(): Plugin {
               const predictionIndex = (predictionData.predictions ?? []).findIndex(item => item.id === prediction_id)
               if (predictionIndex < 0) throw new Error(`Prediction ${prediction_id} not found`)
 
+              if (delete_prediction === true) {
+                predictionData.predictions = (predictionData.predictions ?? []).filter(item => item.id !== prediction_id)
+                factCheckData.fact_checks = (factCheckData.fact_checks ?? []).filter(item => item.prediction_id !== prediction_id)
+                fs.writeFileSync(predictionPath, JSON.stringify(predictionData, null, 2))
+                fs.writeFileSync(factCheckPath, JSON.stringify(factCheckData, null, 2))
+
+                const reviewStatus = readJson<Record<string, unknown>>(REVIEW_STATUS_PATH, {})
+                const current = normalizeReviewEntry(reviewStatus[video_id])
+                reviewStatus[video_id] = {
+                  ...current,
+                  reviewed: false,
+                }
+                fs.writeFileSync(REVIEW_STATUS_PATH, JSON.stringify(reviewStatus, null, 2))
+
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify({
+                  ok: true,
+                  deleted_prediction_id: prediction_id,
+                  reopened_for_fact_check: false,
+                }))
+                return
+              }
+
+              if (!prediction || typeof prediction !== 'object') {
+                throw new Error('prediction is required')
+              }
+
               const existingPrediction = predictionData.predictions![predictionIndex]
               const nextPrediction = { ...existingPrediction, ...prediction, id: existingPrediction.id, video_id }
               const predictionChangedFields = ['prediction', 'context', 'topic', 'timeframe', 'specificity', 'timestamp_seconds']
               const predictionChanged = predictionChangedFields.some(field => JSON.stringify(existingPrediction[field]) !== JSON.stringify(nextPrediction[field]))
+              const reopenFactCheck = reopen_fact_check === true
               predictionData.predictions![predictionIndex] = nextPrediction
               fs.writeFileSync(predictionPath, JSON.stringify(predictionData, null, 2))
 
@@ -544,12 +618,14 @@ function predictionEditorPlugin(): Plugin {
               const factCheckIndex = nextFactChecks.findIndex(item => item.prediction_id === prediction_id)
               let nextFactCheck: Record<string, unknown> | null = fact_check ? { ...fact_check, prediction_id } : (factCheckIndex >= 0 ? nextFactChecks[factCheckIndex] : null)
 
-              if (predictionChanged) {
+              if (predictionChanged || reopenFactCheck) {
                 nextFactCheck = {
                   prediction_id,
                   verdict: 'pending',
                   confidence: 'low',
-                  explanation: 'Prediction updated and needs to be fact-checked again.',
+                  explanation: predictionChanged
+                    ? 'Prediction updated and needs to be fact-checked again.'
+                    : 'Prediction sent back for fact-checking.',
                   sources: [],
                   date_generated: null,
                 }
@@ -568,7 +644,7 @@ function predictionEditorPlugin(): Plugin {
 
               fs.writeFileSync(factCheckPath, JSON.stringify({ video_id, fact_checks: nextFactChecks }, null, 2))
 
-              if (predictionChanged) {
+              if (predictionChanged || reopenFactCheck) {
                 const reviewStatus = readJson<Record<string, unknown>>(REVIEW_STATUS_PATH, {})
                 const current = normalizeReviewEntry(reviewStatus[video_id])
                 reviewStatus[video_id] = {
@@ -583,7 +659,7 @@ function predictionEditorPlugin(): Plugin {
                 ok: true,
                 prediction: nextPrediction,
                 fact_check: nextFactCheck,
-                reopened_for_fact_check: predictionChanged,
+                reopened_for_fact_check: predictionChanged || reopenFactCheck,
               }))
             } catch (err) {
               res.statusCode = 400

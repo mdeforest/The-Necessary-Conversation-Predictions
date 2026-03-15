@@ -94,7 +94,7 @@ function getEffectiveStage(video: Video, reviewStatus: ReviewStateMap): { code: 
   if (!video.has_transcript) return { code: 'transcribe', label: 'Transcribing' }
   if (!video.is_diarized) return { code: 'diarize', label: 'Diarizing' }
   if (!video.has_predictions) return { code: 'extract', label: 'Extracting predictions' }
-  if (!video.has_fact_checks) return { code: 'fact_check', label: 'Fact-checking' }
+  if (!video.has_fact_checks || video.has_pending_fact_checks) return { code: 'fact_check', label: 'Fact-checking' }
   if (reviewEntry.flagged) return { code: 'review', label: 'Flagged for review' }
   if (!reviewEntry.reviewed) return { code: 'review', label: 'Ready for review' }
   return { code: 'complete', label: 'Complete' }
@@ -158,13 +158,14 @@ interface PredRowProps {
   onEditStart: () => void
   onEditSave: (speaker: string) => void
   onEditCancel: () => void
-  onRecordSave: (predictionId: string, patch: Partial<MasterRecord>) => Promise<{ reopened: boolean }>
+  onRecordSave: (predictionId: string, patch: Partial<MasterRecord>, options?: { reopenFactCheck?: boolean }) => Promise<{ reopened: boolean }>
+  onRecordDelete: (predictionId: string) => Promise<void>
   onCopyPrompt: (type: 'extract' | 'fact_check', predictionId: string) => Promise<void>
 }
 
 function PredRow({
   pred, isActive, isFlashing, onSeek,
-  isDev, isEditing, onEditStart, onEditSave, onEditCancel, onRecordSave, onCopyPrompt,
+  isDev, isEditing, onEditStart, onEditSave, onEditCancel, onRecordSave, onRecordDelete, onCopyPrompt,
 }: PredRowProps) {
   const [expanded, setExpanded] = useState(false)
   const [isEditingRecord, setIsEditingRecord] = useState(false)
@@ -415,6 +416,64 @@ function PredRow({
                     <div className="flex items-center gap-2">
                       <button
                         onClick={async () => {
+                          const confirmed = window.confirm('Delete this prediction and its fact-check?')
+                          if (!confirmed) return
+                          setIsSavingRecord(true)
+                          setEditorStatus('')
+                          try {
+                            await onRecordDelete(pred.prediction_id)
+                          } catch (error) {
+                            setEditorStatus(error instanceof Error ? error.message : 'Failed to delete prediction.')
+                            setIsSavingRecord(false)
+                          }
+                        }}
+                        disabled={isSavingRecord}
+                        className="rounded-md border border-red-300 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:border-red-400 hover:bg-red-100 disabled:opacity-50 dark:border-red-800/60 dark:bg-red-950/30 dark:text-red-300"
+                      >
+                        {isSavingRecord ? 'Saving…' : 'Delete prediction'}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          setIsSavingRecord(true)
+                          setEditorStatus('')
+                          try {
+                            const { reopened } = await onRecordSave(
+                              pred.prediction_id,
+                              {
+                                prediction: draftPrediction,
+                                context: draftContext,
+                                topic: draftTopic,
+                                timeframe: draftTimeframe,
+                                specificity: draftSpecificity,
+                                timestamp_seconds: draftTimestamp.trim() === '' ? null : Number(draftTimestamp),
+                                verdict: draftVerdict,
+                                confidence: draftConfidence,
+                                explanation: draftExplanation,
+                                sources: parseSourceList(draftSources),
+                                date_generated: pred.date_generated ?? null,
+                              },
+                              { reopenFactCheck: true },
+                            )
+                            setEditorStatus(reopened ? 'Sent back to fact-checking.' : 'Saved.')
+                            if (reopened) {
+                              setDraftVerdict('pending')
+                              setDraftConfidence('low')
+                              setDraftExplanation('Prediction sent back for fact-checking.')
+                              setDraftSources('')
+                            }
+                          } catch (error) {
+                            setEditorStatus(error instanceof Error ? error.message : 'Failed to reopen fact-check.')
+                          } finally {
+                            setIsSavingRecord(false)
+                          }
+                        }}
+                        disabled={isSavingRecord}
+                        className="rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:border-amber-400 hover:bg-amber-100 disabled:opacity-50 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-300"
+                      >
+                        {isSavingRecord ? 'Saving…' : 'Send to fact-check'}
+                      </button>
+                      <button
+                        onClick={async () => {
                           setIsSavingRecord(true)
                           setEditorStatus('')
                           try {
@@ -493,14 +552,15 @@ interface EpisodeDetailProps {
   preds: MasterRecord[]
   reviewStatus: ReviewStateMap
   onSaveReview: (videoId: string, review: ReviewEntry) => Promise<void>
-  onSaveRecord: (videoId: string, predictionId: string, patch: Partial<MasterRecord>) => Promise<{ reopened: boolean }>
+  onSaveRecord: (videoId: string, predictionId: string, patch: Partial<MasterRecord>, options?: { reopenFactCheck?: boolean }) => Promise<{ reopened: boolean }>
+  onDeleteRecord: (videoId: string, predictionId: string) => Promise<void>
   onCopyPrompt: (videoId: string, predictionId: string, type: 'extract' | 'fact_check') => Promise<void>
   onBack: () => void
   onPrevious: (() => void) | null
   onNext: (() => void) | null
 }
 
-function EpisodeDetail({ video, preds, reviewStatus, onSaveReview, onSaveRecord, onCopyPrompt, onBack, onPrevious, onNext }: EpisodeDetailProps) {
+function EpisodeDetail({ video, preds, reviewStatus, onSaveReview, onSaveRecord, onDeleteRecord, onCopyPrompt, onBack, onPrevious, onNext }: EpisodeDetailProps) {
   const playerContainerRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<any>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -876,7 +936,7 @@ function EpisodeDetail({ video, preds, reviewStatus, onSaveReview, onSaveRecord,
             {isDev && (
               <div className="mt-2 flex items-center gap-2 flex-wrap">
                 <StageBadge stage={stage} />
-                {video.has_fact_checks && (
+                {video.has_fact_checks && !video.has_pending_fact_checks && (
                   <>
                     <button
                       onClick={async () => {
@@ -933,7 +993,7 @@ function EpisodeDetail({ video, preds, reviewStatus, onSaveReview, onSaveRecord,
                 )}
               </div>
             )}
-            {isDev && video.has_fact_checks && (
+            {isDev && video.has_fact_checks && !video.has_pending_fact_checks && (
               <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-[#1E3A60] dark:bg-[#0F1B38]">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-500">
@@ -1034,7 +1094,8 @@ function EpisodeDetail({ video, preds, reviewStatus, onSaveReview, onSaveRecord,
                     onEditStart={() => setEditingPredId(pred.prediction_id)}
                     onEditSave={speaker => handleSpeakerSave(pred, speaker)}
                     onEditCancel={() => setEditingPredId(null)}
-                    onRecordSave={(predictionId, patch) => onSaveRecord(video.id, predictionId, patch)}
+                    onRecordSave={(predictionId, patch, options) => onSaveRecord(video.id, predictionId, patch, options)}
+                    onRecordDelete={(predictionId) => onDeleteRecord(video.id, predictionId)}
                     onCopyPrompt={(type, predictionId) => onCopyPrompt(video.id, predictionId, type)}
                   />
                 ))}
@@ -1053,6 +1114,7 @@ function EpisodeDetail({ video, preds, reviewStatus, onSaveReview, onSaveRecord,
 export function EpisodesTab({ videos, predictions, selectedId, onSelectId }: EpisodesTabProps) {
   const [reviewStatus, setReviewStatus] = useState<ReviewStateMap>({})
   const [recordOverrides, setRecordOverrides] = useState<RecordOverrideMap>({})
+  const [deletedPredictionIds, setDeletedPredictionIds] = useState<Set<string>>(() => new Set())
 
   useEffect(() => {
     if (!isDev) return
@@ -1079,13 +1141,19 @@ export function EpisodesTab({ videos, predictions, selectedId, onSelectId }: Epi
 
   const predsByVideo = new Map<string, MasterRecord[]>()
   for (const p of predictions) {
+    if (deletedPredictionIds.has(p.prediction_id)) continue
     const next = recordOverrides[p.prediction_id] ? { ...p, ...recordOverrides[p.prediction_id] } : p
     const arr = predsByVideo.get(p.video_id) ?? []
     arr.push(next)
     predsByVideo.set(p.video_id, arr)
   }
 
-  const handleSaveRecord = async (videoId: string, predictionId: string, patch: Partial<MasterRecord>) => {
+  const handleSaveRecord = async (
+    videoId: string,
+    predictionId: string,
+    patch: Partial<MasterRecord>,
+    options?: { reopenFactCheck?: boolean },
+  ) => {
     const predictionPayload = {
       prediction: patch.prediction,
       context: patch.context,
@@ -1110,6 +1178,7 @@ export function EpisodesTab({ videos, predictions, selectedId, onSelectId }: Epi
         prediction_id: predictionId,
         prediction: predictionPayload,
         fact_check: factCheckPayload,
+        reopen_fact_check: options?.reopenFactCheck === true,
       }),
     })
     const data = await response.json()
@@ -1132,6 +1201,38 @@ export function EpisodesTab({ videos, predictions, selectedId, onSelectId }: Epi
       }))
     }
     return { reopened: Boolean(data.reopened_for_fact_check) }
+  }
+
+  const handleDeleteRecord = async (videoId: string, predictionId: string) => {
+    const response = await fetch('/api/prediction-editor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        video_id: videoId,
+        prediction_id: predictionId,
+        delete_prediction: true,
+      }),
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error ?? 'Failed to delete prediction')
+
+    setDeletedPredictionIds(prev => {
+      const next = new Set(prev)
+      next.add(predictionId)
+      return next
+    })
+    setRecordOverrides(prev => {
+      const next = { ...prev }
+      delete next[predictionId]
+      return next
+    })
+    setReviewStatus(prev => ({
+      ...prev,
+      [videoId]: {
+        ...(prev[videoId] ?? { reviewed: false, flagged: false, notes: '' }),
+        reviewed: false,
+      },
+    }))
   }
 
   const handleCopyPrompt = async (videoId: string, predictionId: string, type: 'extract' | 'fact_check') => {
@@ -1163,6 +1264,7 @@ export function EpisodesTab({ videos, predictions, selectedId, onSelectId }: Epi
           reviewStatus={reviewStatus}
           onSaveReview={handleSaveReview}
           onSaveRecord={handleSaveRecord}
+          onDeleteRecord={handleDeleteRecord}
           onCopyPrompt={handleCopyPrompt}
           onBack={() => onSelectId(null)}
           onPrevious={previousVideo ? () => onSelectId(previousVideo.id) : null}
