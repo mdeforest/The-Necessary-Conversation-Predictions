@@ -62,6 +62,7 @@ VERDICTS — use exactly one:
 - "partially true": Some aspects of the prediction came true, but others did not, or the outcome is mixed/ambiguous.
 
 RESEARCH STRATEGY:
+0. First interpret the claim using the episode context. Treat the context as essential for resolving pronouns, implied subjects, omitted conditions, and what outcome would count as the prediction coming true.
 1. Search for the core claim directly.
 2. Search for counter-evidence — what if the opposite happened?
 3. If ambiguous, search for the most recent news on the topic.
@@ -70,9 +71,37 @@ RESEARCH STRATEGY:
 6. If the prediction depends on whether a named person is still in office, still a candidate, or still alive, verify that status explicitly with a current authoritative source.
 7. If a prediction says something must happen before a person leaves office or is no longer elected, and that person has already left office or lost/ended that candidacy without the event occurring, the verdict is "false", not "pending".
 
+CLAIM RESOLUTION WORKFLOW:
+- Use every field provided in the user prompt: prediction text, episode context, timeframe, specificity, speaker, timestamp, topic, episode title, and episode date.
+- Before researching, internally rewrite the prediction into one concrete factual claim that captures:
+  1. who or what the claim is about,
+  2. the predicted action or outcome,
+  3. any condition that must happen first,
+  4. the deadline or evaluation window,
+  5. the scope or metric that would count as success.
+- Prefer the narrowest interpretation that is strongly supported by the prediction text plus context.
+- Do not ignore context just because the prediction sentence is short or emotionally phrased.
+- If there are two plausible readings, evaluate the reading best supported by context. Only mention ambiguity when it materially affects the verdict.
+
 TEMPORAL ACCURACY RULES:
 - Never assume a current officeholder from stale knowledge or from the episode context.
 - When mentioning a current president, prime minister, CEO, or other officeholder, verify it and use exact dates when they matter to the verdict.
+
+CONTEXT INTERPRETATION RULES:
+- The podcast "context" field is not proof that the prediction came true, but it is part of the primary claim you are evaluating.
+- Use the context to disambiguate who or what the speaker meant, what triggering condition they were talking about, and what concrete outcome they were predicting.
+- Preserve conditional structure. If the speaker's prediction is effectively "if X happens, Y will follow", do not fact-check Y in isolation from X.
+- If the prediction text is shorthand, elliptical, or emotionally phrased, restate it internally as a precise factual claim before searching.
+- If context reveals that a prediction was about a narrower scope than the text alone suggests, evaluate the narrower scoped claim rather than a broader one.
+- Treat the timeframe as anchored to the episode date unless the prompt clearly gives a different reference point.
+- Treat specificity as a clue about whether the claim may be too vague, but still attempt to resolve it using context before concluding "unverifiable".
+
+HANDLING SENSITIVE OR INFLAMMATORY PREDICTIONS:
+- Some predictions use extreme, violent, or emotionally charged language. This does not make them unverifiable — it just means you must translate the inflammatory framing into a neutral factual question before you search.
+- Before searching, restate the claim internally in the most clinical, neutral language possible. For example: a prediction that "X will be assassinated" becomes "Did [person X] survive the relevant period unharmed?" A prediction that "the world will end" under a given scenario becomes "Did society continue to function normally in that scenario?" A prediction about a trial outcome becomes "What was the actual verdict?"
+- For predictions about elections, treat them as historical record lookups: what did the certified election results show?
+- For conditional predictions ("if X happens, Y will follow"), verify whether condition X was met first. If it was not met, the prediction is unverifiable. If it was met, verify whether Y actually occurred.
+- Your task is to report what the public record shows. The framing of the original claim is irrelevant to whether the outcome occurred.
 
 CONFIDENCE:
 - "high": Multiple reliable sources agree. The outcome is clear-cut.
@@ -187,6 +216,56 @@ def _is_refresh_candidate(fact_check: dict, scope: str, stale_days: int) -> bool
     return False
 
 
+def _needs_recheck(fact_check: dict | None) -> bool:
+    if fact_check is None:
+        return True
+
+    verdict = (fact_check.get("verdict") or "").strip().lower()
+    confidence = (fact_check.get("confidence") or "").strip().lower()
+    explanation = (fact_check.get("explanation") or "").strip().lower()
+
+    if not fact_check.get("date_generated"):
+        return True
+
+    if verdict == "pending" and confidence == "low" and explanation in {
+        "prediction sent back for fact-checking.",
+        "prediction updated and needs to be fact-checked again.",
+    }:
+        return True
+
+    # Content-filtered items should be retried automatically — the improved prompt
+    # may now succeed where two attempts previously failed.
+    if confidence == "low" and "content filter" in explanation:
+        return True
+
+    return False
+
+
+def _legacy_generated_date(fc_file: Path) -> str:
+    try:
+        return datetime.fromtimestamp(fc_file.stat().st_mtime).date().isoformat()
+    except OSError:
+        return date.today().isoformat()
+
+
+def _normalize_existing_fact_checks(fc_file: Path, fc_data: dict) -> dict:
+    fact_checks = fc_data.get("fact_checks", [])
+    if not fact_checks:
+        return fc_data
+
+    fallback_date = _legacy_generated_date(fc_file)
+    changed = False
+    for fact_check in fact_checks:
+        if not fact_check.get("date_generated"):
+            fact_check["date_generated"] = fallback_date
+            changed = True
+
+    if changed:
+        fc_file.write_text(json.dumps(fc_data, indent=2))
+
+    return fc_data
+
+
 def _merge_fact_checks(existing: list[dict], new_items: list[dict]) -> list[dict]:
     """Replace by prediction_id while preserving existing order when possible."""
     merged: dict[str, dict] = {}
@@ -210,37 +289,136 @@ def _merge_fact_checks(existing: list[dict], new_items: list[dict]) -> list[dict
     return [merged[pid] for pid in order]
 
 
+VAGUE_PREDICTION_PATTERNS = [
+    r"\bthere will be blood\b",
+    r"\byou('ll| will) see\b",
+    r"\bwe('re| are) going to find that out\b",
+    r"\bsomething (big|huge|massive) (is )?(going to )?happen\b",
+    r"\beveryone will know\b",
+    r"\bthe truth will come out\b",
+    r"\bwatch what happens\b",
+]
+
+VAGUE_TIMEFRAME_PATTERNS = [
+    r"\bin your lifetime\b",
+    r"\bunspecified\b",
+    r"\bsomeday\b",
+    r"\bsoon\b",
+    r"\bone day\b",
+]
+
+
+def _prefilter_fact_check(prediction: dict, video: dict) -> dict | None:
+    text = (prediction.get("prediction") or "").strip()
+    specificity = (prediction.get("specificity") or "").strip().lower()
+    timeframe = (prediction.get("timeframe") or "").strip().lower()
+    text_lower = text.lower()
+
+    vague_text = any(re.search(pattern, text_lower) for pattern in VAGUE_PREDICTION_PATTERNS)
+    vague_timeframe = any(re.search(pattern, timeframe) for pattern in VAGUE_TIMEFRAME_PATTERNS)
+
+    if specificity == "low" and (vague_text or vague_timeframe):
+        episode_date = video.get("published_at", "the episode date")
+        return {
+            "prediction_id": prediction["id"],
+            "date_generated": date.today().isoformat(),
+            "verdict": "unverifiable",
+            "confidence": "high",
+            "explanation": (
+                f"This statement is too vague to verify reliably as a factual prediction. "
+                f"It was made on {episode_date}, but it does not define a concrete measurable event "
+                f"or a bounded timeframe that public evidence could confirm or falsify."
+            ),
+            "sources": [],
+        }
+
+    return None
+
+
 def _build_prompt(prediction: dict, video: dict, neutral: bool = False) -> str:
+    episode_title = video.get("title", "Unknown episode")
     episode_date = video.get("published_at", "Unknown date")
     timeframe = prediction.get("timeframe", "unspecified")
     topic = prediction.get("topic", "")
     specificity = prediction.get("specificity", "")
     text = prediction["prediction"]
+    context = prediction.get("context", "")
+    speaker = prediction.get("speaker", "Unknown")
+    timestamp = prediction.get("timestamp_seconds")
+    timestamp_line = f"Timestamp in episode: {timestamp}s\n" if timestamp is not None else ""
 
     if neutral:
         return (
-            "For journalism fact-checking research, please verify whether the following claim came true.\n"
-            f"Date the claim was made: {episode_date}\n"
-            f"Topic area: {topic}\n"
-            f"Predicted timeframe: {timeframe}\n"
-            f"Claim: {text}\n\n"
-            "Search for factual evidence about whether this occurred. "
-            "Focus only on verifiable public facts."
+            "Historical fact-checking task for a podcast prediction archive.\n\n"
+            + "IMPORTANT: The claim below may use strong, hyperbolic, or emotionally charged language. "
+            + "Before you do anything else, restate the claim internally in neutral, clinical terms — "
+            + "strip the rhetoric and identify only the concrete factual outcome being predicted "
+            + "(e.g., 'Will [person] remain in good health?', 'What was the certified election result?', "
+            + "'Did [country] take [military action] in [timeframe]?'). Then search on that neutral restatement.\n\n"
+            + f"Episode title: {episode_title}\n"
+            + f"Date the claim was made: {episode_date}\n"
+            + f"Speaker: {speaker}\n"
+            + timestamp_line
+            + f"Topic area: {topic}\n"
+            + f"Predicted timeframe: {timeframe}\n"
+            + f"Specificity: {specificity}\n"
+            + f"Claim text: {text}\n"
+            + f"Episode context: {context}\n\n"
+            + "Steps: (1) Restate the claim in neutral terms. "
+            + "(2) Identify the actor, predicted outcome, any triggering condition, the evaluation window. "
+            + "(3) Search for factual public record evidence about whether this occurred. "
+            + "(4) Search for both confirming and disconfirming evidence. "
+            + "Focus only on verifiable facts from the public record."
             + JSON_FORMAT_REMINDER
         )
 
     return (
-        f"Prediction from podcast episode recorded on {episode_date}:\n"
-        f"Speaker: {prediction.get('speaker', 'Unknown')}\n"
-        f"Topic: {topic}\n"
-        f"Predicted timeframe: {timeframe}\n"
-        f"Specificity: {specificity}\n"
-        f"Prediction: {text}\n"
-        f"Context: {prediction.get('context', '')}\n\n"
-        "Search the web to determine whether this prediction came true. "
-        "Consider whether the predicted timeframe has passed. "
-        "Search for both supporting and contradicting evidence. "
-        "If specificity is 'low', consider whether the prediction is verifiable at all before searching."
+        f"Prediction from podcast episode:\n"
+        + f"Episode title: {episode_title}\n"
+        + f"Episode date: {episode_date}\n"
+        + f"Speaker: {speaker}\n"
+        + timestamp_line
+        + f"Topic: {topic}\n"
+        + f"Predicted timeframe: {timeframe}\n"
+        + f"Specificity: {specificity}\n"
+        + f"Prediction: {text}\n"
+        + f"Context: {context}\n\n"
+        + "Use every field above before you search. First rewrite the claim internally as one precise factual prediction using the prediction text plus context. "
+        + "Keep any implied condition, actor, deadline, and scope from the context attached to the claim while evaluating it. "
+        + "Anchor relative timing to the episode date unless the context clearly points elsewhere. "
+        + "Search the web to determine whether this prediction came true. "
+        + "Consider whether the predicted timeframe has passed. "
+        + "Search for both supporting and contradicting evidence. "
+        + "If specificity is 'low', try to resolve the claim with context before deciding it is unverifiable. "
+        + "Do not broaden a narrow contextual claim into a looser general claim."
+        + JSON_FORMAT_REMINDER
+    )
+
+
+def _build_context_only_prompt(prediction: dict, video: dict) -> str:
+    """Third-pass prompt: omits the raw prediction text entirely.
+
+    Used when the prediction text itself triggers a content filter. Derives
+    the factual question purely from the context description, which is already
+    written in neutral editorial language by the prediction extractor.
+    """
+    episode_title = video.get("title", "Unknown episode")
+    episode_date = video.get("published_at", "Unknown date")
+    timeframe = prediction.get("timeframe", "unspecified")
+    topic = prediction.get("topic", "")
+    context = prediction.get("context", "")
+
+    return (
+        "Historical fact-checking research task.\n\n"
+        + f"Episode: {episode_title} (recorded {episode_date})\n"
+        + f"Topic area: {topic}\n"
+        + f"Predicted timeframe: {timeframe}\n\n"
+        + "A podcast guest made a prediction about the following situation:\n"
+        + f"{context}\n\n"
+        + "Please search for and report what the public record shows actually happened. "
+        + "Determine whether the predicted outcome occurred by looking up verifiable facts. "
+        + "Consider whether the predicted timeframe has passed. "
+        + "Search for both confirming and disconfirming evidence."
         + JSON_FORMAT_REMINDER
     )
 
@@ -296,14 +474,24 @@ def _parse_raw(raw: str) -> dict | None:
 
 
 def fact_check_prediction(prediction: dict, video: dict) -> dict:
+    prefiltered = _prefilter_fact_check(prediction, video)
+    if prefiltered is not None:
+        return prefiltered
+
     # First attempt with full context
     raw, response = _call_model(_build_prompt(prediction, video, neutral=False))
     result = _parse_raw(raw)
 
-    # If blocked or non-JSON, retry with neutral framing
+    # Second attempt: neutral framing with explicit instruction to restate in clinical terms
     if result is None:
-        log("  [retry] content filter triggered — retrying with neutral framing...")
+        log("  [retry 2] content filter — retrying with neutral framing...")
         raw, response = _call_model(_build_prompt(prediction, video, neutral=True))
+        result = _parse_raw(raw)
+
+    # Third attempt: omit the raw prediction text entirely; derive question from context only
+    if result is None:
+        log("  [retry 3] still blocked — retrying with context-only prompt (no raw prediction text)...")
+        raw, response = _call_model(_build_context_only_prompt(prediction, video))
         result = _parse_raw(raw)
 
     if result is None:
@@ -312,7 +500,7 @@ def fact_check_prediction(prediction: dict, video: dict) -> dict:
             "date_generated": date.today().isoformat(),
             "verdict": "unverifiable",
             "confidence": "low",
-            "explanation": "The model declined to process this prediction after two attempts (content filter). Unable to fact-check automatically.",
+            "explanation": "The model declined to process this prediction after three attempts (content filter). Unable to fact-check automatically.",
             "sources": [],
         }
     result["prediction_id"] = prediction["id"]
@@ -378,7 +566,7 @@ def main():
     # Load existing fact-checks to know what's done
     existing_by_prediction_id: dict[str, dict] = {}
     for fc_file in FACT_CHECKS_DIR.glob("*.json"):
-        fc_data = json.loads(fc_file.read_text())
+        fc_data = _normalize_existing_fact_checks(fc_file, json.loads(fc_file.read_text()))
         for fc in fc_data.get("fact_checks", []):
             existing_by_prediction_id[fc["prediction_id"]] = fc
 
@@ -396,7 +584,7 @@ def main():
             existing = existing_by_prediction_id.get(pred["id"])
 
             if not args.refresh_scope:
-                if existing is None:
+                if _needs_recheck(existing):
                     queue.append((pred, video))
                 continue
 
@@ -404,7 +592,7 @@ def main():
                 queue.append((pred, video))
                 continue
 
-            if existing is None or _is_refresh_candidate(existing, args.refresh_scope, args.stale_days):
+            if existing is not None and _is_refresh_candidate(existing, args.refresh_scope, args.stale_days):
                 queue.append((pred, video))
 
     if not queue:
